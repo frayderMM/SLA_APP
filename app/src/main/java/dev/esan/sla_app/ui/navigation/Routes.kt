@@ -8,7 +8,10 @@ object Routes {
     const val ALERTAS = "alertas"
     const val PDF = "pdf"
     const val PROFILE = "profile"
-    const val SOLICITUDES = "solicitudes"
-    const val SOLICITUD_CREAR = "solicitudes/crear"
-    const val SOLICITUD_EDITAR = "solicitudes/editar/{id}"
+
+    // 🔥 Agrupamos las rutas de solicitudes bajo un grafo para compartir el ViewModel
+    const val SOLICITUDES_GRAPH = "solicitudes_graph" // Ruta del grafo
+    const val SOLICITUDES_LIST = "solicitudes_list"  // Ruta para la pantalla de la lista
+    const val SOLICITUD_CREAR = "solicitudes_crear"
+    const val SOLICITUD_EDITAR = "solicitudes_editar/{id}"
 }

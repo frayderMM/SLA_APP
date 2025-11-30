@@ -1,15 +1,13 @@
 package dev.esan.sla_app.data.model
 
-import com.google.gson.annotations.SerializedName
-
-// Esta clase representa el objeto anidado "tipoSla" que viene del backend.
+/**
+ * Representa un Tipo de SLA devuelto por la API.
+ * Ejemplo: { "id": 1, "codigo": "SLA1", "nombre": "SLA Nivel 1", ... }
+ */
 data class TipoSla(
-    @SerializedName("idTipoSla")
     val id: Int,
-
-    @SerializedName("nombre")
+    val codigo: String,
     val nombre: String,
-
-    @SerializedName("tiempoRespuestaHoras")
+    val descripcion: String,
     val tiempoRespuesta: Int
 )

@@ -1,47 +1,45 @@
 package dev.esan.sla_app.data.repository
 
+import dev.esan.sla_app.data.model.CreateSolicitudDto
+import dev.esan.sla_app.data.model.Solicitud
+import dev.esan.sla_app.data.model.UpdateSolicitudDto
 import dev.esan.sla_app.data.remote.api.SolicitudesApi
-import dev.esan.sla_app.data.remote.dto.solicitudes.CrearSolicitudRequest
-import dev.esan.sla_app.data.remote.dto.solicitudes.EditarSolicitudRequest
-import dev.esan.sla_app.data.remote.dto.solicitudes.SolicitudDto
-import dev.esan.sla_app.utils.Resource
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import retrofit2.Response
+import dev.esan.sla_app.data.remote.api.TiposSlaApi
 import java.io.IOException
 
 class SolicitudesRepository(
-    private val api: SolicitudesApi
+    private val solicitudesApi: SolicitudesApi,
+    private val tiposSlaApi: TiposSlaApi
 ) {
 
-    private suspend fun <T> safeApiCall(apiCall: suspend () -> Response<T>): Resource<T> {
-        return withContext(Dispatchers.IO) {
-            try {
-                val response = apiCall()
-                if (response.isSuccessful) {
-                    response.body()?.let {
-                        Resource.Success(it)
-                    } ?: Resource.Error("Respuesta exitosa pero cuerpo vacío.")
-                } else {
-                    val errorMsg = response.errorBody()?.string() ?: "Sin mensaje de error."
-                    Resource.Error("Error ${response.code()}: $errorMsg")
-                }
-            } catch (e: IOException) {
-                Resource.Error("Error de red. Revisa tu conexión a internet.")
-            } catch (e: Exception) {
-                Resource.Error("Error inesperado: ${e.message}")
-            }
+    // --- Endpoints de Solicitudes ---
+
+    suspend fun getSolicitudes(): List<Solicitud> = solicitudesApi.getSolicitudes()
+
+    suspend fun getSolicitudById(id: Int): Solicitud = solicitudesApi.getSolicitudById(id)
+
+    suspend fun createSolicitud(solicitud: CreateSolicitudDto) {
+        val response = solicitudesApi.createSolicitud(solicitud)
+        if (!response.isSuccessful) {
+            throw IOException("Error al crear la solicitud: ${response.code()} ${response.message()}")
         }
     }
 
-    // --- LLAMADAS A LA API CORREGIDAS Y ESTANDARIZADAS ---
-    suspend fun getSolicitudes(): Resource<List<SolicitudDto>> = safeApiCall { api.getSolicitudes() }
+    suspend fun updateSolicitud(id: Int, solicitud: UpdateSolicitudDto) {
+        val response = solicitudesApi.updateSolicitud(id, solicitud)
+        if (!response.isSuccessful) {
+            throw IOException("Error al actualizar la solicitud: ${response.code()} ${response.message()}")
+        }
+    }
 
-    suspend fun getSolicitudPorId(id: Int): Resource<SolicitudDto> = safeApiCall { api.getSolicitudPorId(id) }
+    suspend fun deleteSolicitud(id: Int) {
+        val response = solicitudesApi.deleteSolicitud(id)
+        if (!response.isSuccessful) {
+            throw IOException("Error al eliminar la solicitud: ${response.code()} ${response.message()}")
+        }
+    }
 
-    suspend fun crearSolicitud(body: CrearSolicitudRequest): Resource<SolicitudDto> = safeApiCall { api.crearSolicitud(body) }
+    // --- Endpoints de TiposSla ---
 
-    suspend fun actualizarSolicitud(id: Int, body: EditarSolicitudRequest): Resource<SolicitudDto> = safeApiCall { api.actualizarSolicitud(id, body) }
-
-    suspend fun eliminarSolicitud(id: Int): Resource<Unit> = safeApiCall { api.eliminarSolicitud(id) }
+    suspend fun getTiposSla() = tiposSlaApi.getTiposSla()
 }

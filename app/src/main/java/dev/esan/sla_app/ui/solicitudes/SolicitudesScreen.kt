@@ -1,40 +1,19 @@
 package dev.esan.sla_app.ui.solicitudes
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import dev.esan.sla_app.data.remote.dto.solicitudes.SolicitudDto
+import dev.esan.sla_app.data.model.Solicitud
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,43 +22,84 @@ fun SolicitudesScreen(
     onCrear: () -> Unit,
     onEditar: (Int) -> Unit
 ) {
-    val state by viewModel.state.collectAsState()
+    val listState by viewModel.listState.collectAsState()
+    val formState by viewModel.formState.collectAsState() // 🔥 1. OBTENER EL ESTADO DEL FORMULARIO
+
+    var showDialog by remember { mutableStateOf(false) }
+    var solicitudAEliminar by remember { mutableStateOf<Int?>(null) }
+
+    // Dialogo de confirmación para eliminar
+    if (showDialog && solicitudAEliminar != null) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Confirmar Eliminación") },
+            text = { Text("¿Estás seguro de que quieres eliminar esta solicitud?") },
+            confirmButton = {
+                Button(onClick = {
+                    solicitudAEliminar?.let { viewModel.deleteSolicitud(it) }
+                    showDialog = false
+                }) { Text("Eliminar") }
+            },
+            dismissButton = {
+                Button(onClick = { showDialog = false }) { Text("Cancelar") }
+            }
+        )
+    }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Solicitudes SLA") }) },
+        // 🔥 2. AÑADIR TOPAPPBAR
+        topBar = { TopAppBar(title = { Text("Gestión de Solicitudes") }) },
         floatingActionButton = {
             FloatingActionButton(onClick = onCrear) {
                 Icon(Icons.Default.Add, contentDescription = "Crear Solicitud")
             }
         }
     ) { padding ->
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFF8F9FC))
-                .padding(padding)
+        Column(
+            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)
         ) {
+            when {
+                listState.isLoading && listState.solicitudes.isEmpty() -> {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    }
+                }
+                listState.error != null -> {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Text(listState.error!!, modifier = Modifier.align(Alignment.Center))
+                    }
+                }
+                else -> {
+                    // 🔥 3. OPCIONES PARA EL FILTRO
+                    val slaOptions = listOf("Todos") + formState.tiposSla.map { it.nombre }.sorted()
 
-            if (state.loading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else if (state.error != null) {
-                Text(
-                    text = "Error: ${state.error}",
-                    color = Color.Red,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            } else if (state.data.isEmpty()) {
-                Text("No hay solicitudes para mostrar.", modifier = Modifier.align(Alignment.Center))
-            } else {
-                LazyColumn(contentPadding = PaddingValues(16.dp)) {
-                    items(state.data) { item ->
-                        SolicitudCard(
-                            item = item,
-                            onEditar = onEditar,
-                            onEliminar = { viewModel.eliminarSolicitud(item.id) }
-                        )
-                        Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(16.dp))
+
+                    // 🔥 4. AÑADIR DROPDOWN DE FILTRO
+                    DropdownFiltro(
+                        label = "Tipo SLA",
+                        seleccion = listState.slaFilter,
+                        opciones = slaOptions,
+                        onSelected = { newSla -> viewModel.onSlaFilterChanged(newSla) }
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+
+                    if (listState.isLoading) {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
+
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        items(listState.solicitudes) { solicitud ->
+                            SolicitudCard(
+                                solicitud = solicitud,
+                                onEditar = { onEditar(solicitud.id) },
+                                onEliminar = {
+                                    solicitudAEliminar = solicitud.id
+                                    showDialog = true
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -89,33 +109,56 @@ fun SolicitudesScreen(
 
 @Composable
 fun SolicitudCard(
-    item: SolicitudDto,
-    onEditar: (Int) -> Unit,
+    solicitud: Solicitud,
+    onEditar: () -> Unit,
     onEliminar: () -> Unit
 ) {
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp)) {
-
-            Text(
-                text = item.descripcion,
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(Modifier.height(8.dp))
-            Text("Rol: ${item.rol}", style = MaterialTheme.typography.bodySmall)
-            // Acceso seguro al nombre del tipoSla
-            Text("Tipo SLA: ${item.tipoSla.nombre}", style = MaterialTheme.typography.bodySmall)
-            Text("Fecha Solicitud: ${item.fechaSolicitud}", style = MaterialTheme.typography.bodySmall)
-            Text("Ingreso: ${item.fechaIngreso ?: "Pendiente"}", style = MaterialTheme.typography.bodySmall)
-
-            Spacer(Modifier.height(10.dp))
-
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                IconButton(onClick = { onEditar(item.id) }) {
-                    Icon(Icons.Default.Edit, contentDescription = "Editar")
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("ID: ${solicitud.id}", fontWeight = FontWeight.Bold)
+            Text("Rol: ${solicitud.rol}")
+            Text("Fecha Solicitud: ${solicitud.fechaSolicitud}")
+            Text("Fecha Ingreso: ${solicitud.fechaIngreso}")
+            Text("Tipo SLA: ${solicitud.tipoSlaNombre ?: "N/A"}")
+            Spacer(Modifier.height(12.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = onEditar) {
+                    Icon(Icons.Default.Edit, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Editar")
                 }
-                IconButton(onClick = onEliminar) {
-                    Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = Color.Red)
+                Button(onClick = onEliminar, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) {
+                    Icon(Icons.Default.Delete, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Eliminar")
                 }
+            }
+        }
+    }
+}
+
+// 🔥 5. COMPOSABLE REUTILIZABLE PARA EL FILTRO
+@Composable
+private fun DropdownFiltro(
+    label: String,
+    seleccion: String,
+    opciones: List<String>,
+    onSelected: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Column {
+        OutlinedButton(modifier = Modifier.fillMaxWidth(), onClick = { expanded = true }) {
+            Text("$label: $seleccion", fontWeight = FontWeight.SemiBold)
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            opciones.forEach { opcion ->
+                DropdownMenuItem(text = { Text(opcion) }, onClick = {
+                    onSelected(opcion)
+                    expanded = false
+                })
             }
         }
     }

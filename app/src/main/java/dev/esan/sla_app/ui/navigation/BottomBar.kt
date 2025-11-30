@@ -13,25 +13,21 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 @Composable
 fun BottomBar(navController: NavHostController) {
 
-    // Lista actualizada de items en la barra de navegación
+    // 🔥 CORREGIDO: Se elimina "Solicitudes" de la barra de navegación principal
     val items = listOf(
         BottomNavItem.Dashboard,
         BottomNavItem.Indicadores,
         BottomNavItem.Alertas,
-        BottomNavItem.Pdf, // Ítem de Reportes PDF añadido
         BottomNavItem.Profile
     )
 
     NavigationBar {
-
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentDestination: NavDestination? = navBackStackEntry?.destination
 
         items.forEach { item ->
-
             NavigationBarItem(
                 selected = currentDestination?.route == item.route,
-
                 onClick = {
                     if (currentDestination?.route != item.route) {
                         navController.navigate(item.route) {
@@ -40,7 +36,6 @@ fun BottomBar(navController: NavHostController) {
                         }
                     }
                 },
-
                 icon = { Icon(item.icon, contentDescription = item.title) },
                 label = { Text(item.title) }
             )

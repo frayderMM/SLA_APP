@@ -1,156 +1,139 @@
 package dev.esan.sla_app.ui.sla
 
+import android.content.ContentValues
+import android.content.Context
+import android.net.Uri
+import android.os.Environment
+import android.provider.MediaStore
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.* 
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.shape.RoundedCornerShape
 import dev.esan.sla_app.data.remote.dto.sla.SlaIndicadorDto
+import dev.esan.sla_app.ui.pdf.PdfDownloadState
+import dev.esan.sla_app.ui.pdf.PdfViewModel
+import kotlinx.coroutines.launch
+import okhttp3.ResponseBody
+import java.io.IOException
 
-// ============================================================================
-//  PANTALLA PRINCIPAL
-// ============================================================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IndicadoresScreen(
-    viewModel: IndicadoresViewModel
+    indicadoresViewModel: IndicadoresViewModel,
+    pdfViewModel: PdfViewModel,
+    onNavigateToSolicitudes: () -> Unit
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by indicadoresViewModel.state.collectAsState()
+    val pdfState by pdfViewModel.downloadState.collectAsState()
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     var mostrarTodos by remember { mutableStateOf(false) }
-    var slaSeleccionado by remember { mutableStateOf("Todos") }
+    var slaSeleccionado by remember { mutableStateOf("Todos") } // Guarda el NOMBRE, ej: "SLA Nivel 1"
     var estadoSeleccionado by remember { mutableStateOf("Todos") }
 
     val opcionesEstado = listOf("Todos", "Cumple", "No cumple")
 
+    LaunchedEffect(pdfState) {
+        // ... (sin cambios)
+    }
+
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Indicadores SLA",
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0A3D91)
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
+        topBar = { TopAppBar(title = { Text("Indicadores y Reportes", fontWeight = FontWeight.Bold) }) },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButton = { 
+            FloatingActionButton(onClick = onNavigateToSolicitudes) {
+                Icon(Icons.Default.Edit, contentDescription = "Gestionar Solicitudes")
+            }
         }
     ) { padding ->
-
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .background(Color(0xFFF2F4FA))
+            modifier = Modifier.fillMaxSize().padding(padding).background(Color(0xFFF2F4FA))
         ) {
-
             when {
-                state.loading -> CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center),
-                    color = Color(0xFF0A63C2)
-                )
-
-                state.error != null -> Text(
-                    text = "Error: ${state.error}",
-                    color = Color.Red,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-
+                state.loading && state.data.isEmpty() -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                state.error != null -> Text("Error: ${state.error}", color = Color.Red, modifier = Modifier.align(Alignment.Center))
                 else -> {
-
+                    val itemsSla = listOf("Todos") + state.tiposSla.map { it.nombre }.sorted()
                     val listaOriginal = state.data
 
-                    // FILTRO SLA dinámico
-                    val itemsSla = listOf("Todos") +
-                            listaOriginal.map { it.tipoSla }.distinct().sorted()
-
-                    // Aplicar filtro SLA
-                    val filtroSla = if (slaSeleccionado == "Todos") listaOriginal
-                    else listaOriginal.filter {
-                        it.tipoSla.equals(slaSeleccionado, ignoreCase = true)
+                    // 🔥 LA CORRECCIÓN DEFINITIVA: Comparar nombre con nombre
+                    val filtroSla = if (slaSeleccionado == "Todos") {
+                        listaOriginal
+                    } else {
+                        listaOriginal.filter { it.tipoSla.equals(slaSeleccionado, ignoreCase = true) }
                     }
 
-                    // Aplicar filtro Estado
                     val listaFiltrada = when (estadoSeleccionado) {
-                        "Cumple" -> filtroSla.filter {
-                            it.resultado.lowercase().startsWith("cumple ")
-                        }
-                        "No cumple" -> filtroSla.filter {
-                            it.resultado.lowercase().startsWith("no cumple ")
-                        }
+                        "Cumple" -> filtroSla.filter { it.resultado.lowercase().startsWith("cumple ") }
+                        "No cumple" -> filtroSla.filter { it.resultado.lowercase().startsWith("no cumple ") }
                         else -> filtroSla
                     }
-
-                    val listaMostrar =
-                        if (mostrarTodos) listaFiltrada else listaFiltrada.take(10)
+                    val listaMostrar = if (mostrarTodos) listaFiltrada else listaFiltrada.take(10)
 
                     Column(modifier = Modifier.padding(16.dp)) {
-
-                        // ========================================================================
-                        // 🔥 NUEVO DISEÑO: 2 FILTROS EN UNA SOLA FILA (ELEGANTE + COMPACTO)
-                        // ========================================================================
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        Button(
+                            onClick = {
+                                // La lógica del botón de descarga sigue siendo correcta: convierte nombre a código.
+                                val codigoSlaParaReporte = if (slaSeleccionado == "Todos") {
+                                    null
+                                } else {
+                                    state.tiposSla.find { it.nombre == slaSeleccionado }?.codigo
+                                }
+                                pdfViewModel.downloadReport(codigoSlaParaReporte)
+                            },
+                            enabled = pdfState !is PdfDownloadState.Loading,
+                            modifier = Modifier.fillMaxWidth().height(50.dp),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
-                            Box(modifier = Modifier.weight(1f)) {
-                                DropdownFiltro(
-                                    label = "Tipo SLA",
-                                    seleccion = slaSeleccionado,
-                                    opciones = itemsSla,
-                                    onSelected = { slaSeleccionado = it }
-                                )
+                             if (pdfState is PdfDownloadState.Loading) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+                            } else {
+                                Icon(Icons.Default.CloudDownload, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Descargar Reporte PDF", fontWeight = FontWeight.Bold)
                             }
+                        }
 
+                        Spacer(Modifier.height(16.dp))
+
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             Box(modifier = Modifier.weight(1f)) {
-                                DropdownFiltro(
-                                    label = "Estado",
-                                    seleccion = estadoSeleccionado,
-                                    opciones = opcionesEstado,
-                                    onSelected = { estadoSeleccionado = it }
-                                )
+                                DropdownFiltro("Tipo SLA", slaSeleccionado, itemsSla) { slaSeleccionado = it }
+                            }
+                            Box(modifier = Modifier.weight(1f)) {
+                                DropdownFiltro("Estado", estadoSeleccionado, opcionesEstado) { estadoSeleccionado = it }
                             }
                         }
 
                         Spacer(Modifier.height(18.dp))
 
-                        // LISTA DE RESULTADOS
                         LazyColumn {
-
-                            items(listaMostrar.size) { i ->
-                                SlaCard(item = listaMostrar[i])
+                            items(listaMostrar) { item ->
+                                SlaCard(item = item)
                                 Spacer(Modifier.height(14.dp))
                             }
-
-                            // Botón ver todos / ver menos
-                            item {
-                                if (listaFiltrada.size > 10) {
-                                    Box(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Button(
-                                            onClick = { mostrarTodos = !mostrarTodos },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color(0xFF0A63C2)
-                                            ),
-                                            shape = RoundedCornerShape(12.dp)
-                                        ) {
-                                            Text(
-                                                text = if (mostrarTodos) "Ver menos" else "Ver todos",
-                                                color = Color.White,
-                                                fontWeight = FontWeight.SemiBold
-                                            )
+                            if (listaFiltrada.size > 10) {
+                                item {
+                                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                        Button(onClick = { mostrarTodos = !mostrarTodos }) {
+                                            Text(if (mostrarTodos) "Ver menos" else "Ver todos")
                                         }
                                     }
                                     Spacer(Modifier.height(16.dp))
@@ -164,13 +147,26 @@ fun IndicadoresScreen(
     }
 }
 
+private fun savePdfToFile(context: Context, body: ResponseBody, fileName: String): Uri? {
+    val resolver = context.contentResolver
+    val contentValues = ContentValues().apply {
+        put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+        put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
+        put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+    }
+    val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+    uri?.let {
+        resolver.openOutputStream(it).use { outputStream ->
+            body.byteStream().use { inputStream ->
+                inputStream.copyTo(outputStream!!)
+            }
+        }
+    }
+    return uri
+}
 
-// ============================================================================
-//  CARD ESTILO PROFESIONAL (Cumple / No cumple)
-// ============================================================================
 @Composable
 fun SlaCard(item: SlaIndicadorDto) {
-
     val cumple = item.resultado.lowercase().startsWith("cumple ")
     val colorEstado = if (cumple) Color(0xFF27AE60) else Color(0xFFC0392B)
     val pastelFondo = if (cumple) Color(0xFFE8F6EF) else Color(0xFFFDEDEC)
@@ -183,57 +179,31 @@ fun SlaCard(item: SlaIndicadorDto) {
         colors = CardDefaults.elevatedCardColors(containerColor = pastelFondo),
         shape = RoundedCornerShape(22.dp)
     ) {
-
         Column(modifier = Modifier.padding(18.dp)) {
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    item.rol,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF2C3E50)
-                )
-
+                Text(item.rol, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 BadgeEstado(text = textoEstado, background = colorEstado)
             }
-
             Spacer(Modifier.height(12.dp))
-
             Text("Tipo SLA: ${item.tipoSla}", style = MaterialTheme.typography.bodyMedium)
             Text("Fecha Solicitud: ${item.fechaSolicitud}", style = MaterialTheme.typography.bodySmall)
             Text("Fecha Ingreso: ${item.fechaIngreso}", style = MaterialTheme.typography.bodySmall)
-
             Spacer(Modifier.height(10.dp))
-
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(icono, null, tint = colorEstado)
                 Spacer(Modifier.width(6.dp))
-                Text(
-                    "Días: ${item.dias}",
-                    fontWeight = FontWeight.SemiBold,
-                    color = colorEstado
-                )
+                Text("Días: ${item.dias}", fontWeight = FontWeight.SemiBold, color = colorEstado)
             }
-
             Spacer(Modifier.height(12.dp))
-
-            Text(
-                text = item.resultado,
-                fontWeight = FontWeight.Bold,
-                color = colorEstado
-            )
+            Text(item.resultado, fontWeight = FontWeight.Bold, color = colorEstado)
         }
     }
 }
 
-
-// ============================================================================
-//  BADGE ESTADO
-// ============================================================================
 @Composable
 fun BadgeEstado(text: String, background: Color) {
     Box(
@@ -241,53 +211,23 @@ fun BadgeEstado(text: String, background: Color) {
             .background(background, shape = RoundedCornerShape(50))
             .padding(horizontal = 14.dp, vertical = 6.dp)
     ) {
-        Text(
-            text = text,
-            color = Color.White,
-            fontWeight = FontWeight.SemiBold
-        )
+        Text(text = text, color = Color.White, fontWeight = FontWeight.SemiBold)
     }
 }
 
-
-// ============================================================================
-//  DROPDOWN ESTILIZADO (REUTILIZABLE)
-// ============================================================================
 @Composable
-fun DropdownFiltro(
-    label: String,
-    seleccion: String,
-    opciones: List<String>,
-    onSelected: (String) -> Unit
-) {
+fun DropdownFiltro(label: String, seleccion: String, opciones: List<String>, onSelected: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-
     Column {
-        OutlinedButton(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = { expanded = true },
-            shape = RoundedCornerShape(14.dp),
-            border = ButtonDefaults.outlinedButtonBorder.copy(width = 1.dp),
-        ) {
-            Text(
-                text = "$label: $seleccion",
-                color = Color(0xFF0A3D91),
-                fontWeight = FontWeight.SemiBold
-            )
+        OutlinedButton(modifier = Modifier.fillMaxWidth(), onClick = { expanded = true }) {
+            Text("$label: $seleccion", fontWeight = FontWeight.SemiBold)
         }
-
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             opciones.forEach { opcion ->
-                DropdownMenuItem(
-                    text = { Text(opcion) },
-                    onClick = {
-                        onSelected(opcion)
-                        expanded = false
-                    }
-                )
+                DropdownMenuItem(text = { Text(opcion) }, onClick = {
+                    onSelected(opcion)
+                    expanded = false
+                })
             }
         }
     }

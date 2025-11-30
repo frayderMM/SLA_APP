@@ -9,9 +9,11 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
-    <!-- Permiso para descargas (Android viejo ya no lo usa mucho pero no afecta) -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28" />
+    <!--
+        Permiso para escribir en almacenamiento. Eliminamos maxSdkVersion="28"
+        para asegurar compatibilidad con la API MediaStore en versiones modernas de Android.
+    -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <!-- Permito leer archivos que descargo (PDF/Excel) -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
@@ -51,7 +53,7 @@
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
+                android:resource="@xml/provider_paths" />
         </provider>
 
     </application>
