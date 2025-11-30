@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,36 +19,44 @@ import dev.esan.sla_app.ui.insight.InsightPanelViewModel
 @Composable
 fun DashboardScreen(
     viewModel: InsightPanelViewModel,
-    onNavigateToSolicitudes: () -> Unit
+    onNavigateToSolicitudes: () -> Unit,
+    onNavigateToAlerts: () -> Unit // 🔥 1. AÑADIR NUEVO PARÁMETRO
 ) {
     var selectedSla by remember { mutableStateOf("SLA1") }
 
-    // Cargar SLA por defecto
     LaunchedEffect(Unit) {
         viewModel.load(selectedSla)
     }
 
-    // Recargar cuando cambie el SLA
     LaunchedEffect(selectedSla) {
         viewModel.load(selectedSla)
     }
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Dashboard SLA") })
+            TopAppBar(
+                title = { Text("Dashboard SLA") },
+                // 🔥 2. AÑADIR LA ACCIÓN DE LA CAMPANA
+                actions = {
+                    IconButton(onClick = onNavigateToAlerts) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Ir a Alertas"
+                        )
+                    }
+                }
+            )
         }
     ) { padding ->
 
-        // --- CORRECCIÓN: Se añade el modificador verticalScroll al Column principal ---
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .background(Color(0xFFF8F9FC))
-                .verticalScroll(rememberScrollState()) // <-- ESTA LÍNEA SOLUCIONA EL PROBLEMA
+                .verticalScroll(rememberScrollState())
         ) {
 
-            // 🔵 Botón Solicitudes
             Button(
                 onClick = onNavigateToSolicitudes,
                 modifier = Modifier
@@ -58,7 +68,6 @@ fun DashboardScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // 🔵 Selector SLA (Dropdown)
             SlaSelector(
                 selected = selectedSla,
                 onSelect = { selectedSla = it }
@@ -66,15 +75,11 @@ fun DashboardScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // 🔥 Panel de insights completo
             InsightPanelScreen(viewModel)
         }
     }
 }
 
-/* ========================================================
-   selector SLA (SLA1 / SLA2)
-   ======================================================== */
 @Composable
 fun SlaSelector(
     selected: String,

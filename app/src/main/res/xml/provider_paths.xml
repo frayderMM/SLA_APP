@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+        Define la ruta de la caché de la app como una carpeta compartible.
+        El atributo 'name' es un alias que podemos usar.
+        El atributo 'path' es "." para indicar la raíz del directorio de caché,
+        permitiendo compartir cualquier archivo guardado allí.
+    -->
+    <cache-path
+        name="shared_cache"
+        path="." />
+</paths>
