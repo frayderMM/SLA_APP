@@ -57,14 +57,7 @@ fun DashboardScreen(
                 .verticalScroll(rememberScrollState())
         ) {
 
-            Button(
-                onClick = onNavigateToSolicitudes,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-            ) {
-                Text("Gestionar Solicitudes")
-            }
+
 
             Spacer(Modifier.height(12.dp))
 
