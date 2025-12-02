@@ -2,7 +2,9 @@ package dev.esan.sla_app.ui.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.auth0.android.jwt.JWT
 import dev.esan.sla_app.data.datastore.DataStoreManager
+import dev.esan.sla_app.data.model.AuthenticatedUser
 import dev.esan.sla_app.data.remote.RetrofitClient
 import dev.esan.sla_app.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,13 +27,21 @@ class LoginViewModel(
 
                 val response = repo.login(email, password)
 
-                // --- SOLUCIÓN DEL PUNTO #1 DE TU PLAN ---
-                // 1. Guardar el token en DataStore para persistencia.
-                dataStore.saveToken(response.token)
+                // Decodificar el token para obtener los datos del usuario
+                val jwt = JWT(response.token)
+                val user = AuthenticatedUser(
+                    token = response.token,
+                    id = jwt.subject ?: "",
+                    email = jwt.getClaim("email").asString() ?: "",
+                    role = jwt.getClaim("rol").asString() ?: "Usuario",
+                    nombre = jwt.getClaim("nombre").asString()
+                )
 
-                // 2. Inyectar el token en el interceptor para la sesión actual.
+                // Guardar el objeto de usuario completo en el DataStore
+                dataStore.saveUser(user)
+
+                // Inyectar el token en el interceptor para la sesión actual
                 RetrofitClient.authInterceptor.setToken(response.token)
-                // --- FIN DE LA SOLUCIÓN ---
 
                 _state.value = LoginState(success = true)
 

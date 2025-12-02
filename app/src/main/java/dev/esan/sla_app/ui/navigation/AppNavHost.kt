@@ -119,7 +119,10 @@ fun AppNavHost(
 
         composable(Routes.PROFILE) {
             val profileVM: ProfileViewModel = viewModel(
-                factory = ProfileViewModelFactory(dataStore = appContainer.dataStoreManager)
+                factory = ProfileViewModelFactory(
+                    dataStore = appContainer.dataStoreManager,
+                    authRepository = appContainer.authRepository
+                )
             )
             MainScreen(navController = navController) {
                 ProfileScreen(
