@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,7 +20,8 @@ import dev.esan.sla_app.data.remote.dto.alertas.AlertaDto
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlertasScreen(
-    viewModel: AlertasViewModel
+    viewModel: AlertasViewModel,
+    onNavigateToEmailConfig: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -32,6 +34,15 @@ fun AlertasScreen(
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF0A3D91)
                     )
+                },
+                actions = {
+                    IconButton(onClick = onNavigateToEmailConfig) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.Email,
+                            contentDescription = "Configurar Email",
+                            tint = Color(0xFF0A3D91)
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.White

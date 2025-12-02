@@ -14,6 +14,7 @@ interface AppContainer {
     val solicitudesRepository: SolicitudesRepository
     val reportesRepository: ReportesRepository
     val profileRepository: ProfileRepository
+    val emailRepository: EmailRepository
     val dataStoreManager: DataStoreManager
 }
 
@@ -46,6 +47,7 @@ class DefaultAppContainer(context: Context) : AppContainer {
     }
     override val reportesRepository: ReportesRepository by lazy { ReportesRepository(reportesApi) }
     override val profileRepository: ProfileRepository by lazy { ProfileRepository(profileApi) }
+    override val emailRepository: EmailRepository by lazy { EmailRepository(context, alertasRepository) }
 
     override val dataStoreManager: DataStoreManager by lazy {
         DataStoreManager(context.applicationContext)
