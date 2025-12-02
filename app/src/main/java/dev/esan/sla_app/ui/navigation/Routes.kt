@@ -4,10 +4,13 @@ object Routes {
     const val SPLASH = "splash"
     const val LOGIN = "login"
     const val DASHBOARD = "dashboard"
+    const val REGRESSION = "regression"
     const val INDICADORES = "indicadores"
     const val ALERTAS = "alertas"
     const val PDF = "pdf"
     const val PROFILE = "profile"
+
+    const val DASHBOARD_GRAPH = "dashboard_graph"
 
     // 🔥 Agrupamos las rutas de solicitudes bajo un grafo para compartir el ViewModel
     const val SOLICITUDES_GRAPH = "solicitudes_graph" // Ruta del grafo

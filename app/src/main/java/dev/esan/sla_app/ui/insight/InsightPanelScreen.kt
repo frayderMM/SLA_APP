@@ -8,7 +8,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import dev.esan.sla_app.ui.insight.components.InsightHistoricoChart
 import dev.esan.sla_app.ui.insight.components.InsightIndicadoresCard
-import dev.esan.sla_app.ui.insight.components.InsightRegresionCard
 import dev.esan.sla_app.data.remote.dto.insight.InsightPoint
 
 @Composable
@@ -33,11 +32,6 @@ fun InsightPanelScreen(
                 )
             }
             InsightHistoricoChart(puntos)
-        }
-
-        // 3️⃣ Regresión
-        state.regresion?.let {
-            InsightRegresionCard(it)
         }
     }
 }

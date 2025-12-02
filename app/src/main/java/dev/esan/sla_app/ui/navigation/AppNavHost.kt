@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -28,6 +29,7 @@ import dev.esan.sla_app.ui.login.*
 import dev.esan.sla_app.ui.pdf.PdfViewModel
 import dev.esan.sla_app.ui.pdf.PdfViewModelFactory
 import dev.esan.sla_app.ui.profile.*
+import dev.esan.sla_app.ui.regression.RegressionScreen
 import dev.esan.sla_app.ui.sla.*
 import dev.esan.sla_app.ui.solicitudes.*
 import kotlinx.coroutines.flow.first
@@ -45,7 +47,7 @@ fun AppNavHost(
         val token = appContainer.dataStoreManager.token.first()
         val startDestination = if (token != null) {
             RetrofitClient.authInterceptor.setToken(token)
-            Routes.DASHBOARD
+            Routes.DASHBOARD_GRAPH
         } else {
             Routes.LOGIN
         }
@@ -70,24 +72,13 @@ fun AppNavHost(
                 factory = LoginViewModelFactory(appContainer.authRepository, appContainer.dataStoreManager)
             )
             LoginScreen(viewModel = loginVM) {
-                navController.navigate(Routes.DASHBOARD) {
+                navController.navigate(Routes.DASHBOARD_GRAPH) {
                     popUpTo(Routes.LOGIN) { inclusive = true }
                 }
             }
         }
 
-        composable(Routes.DASHBOARD) {
-            val insightVM: InsightPanelViewModel = viewModel(
-                factory = InsightPanelViewModelFactory(appContainer.insightRepository)
-            )
-            MainScreen(navController = navController) {
-                DashboardScreen(
-                    viewModel = insightVM,
-                    onNavigateToSolicitudes = { navController.navigate(Routes.INDICADORES) },
-                    onNavigateToAlerts = { navController.navigate(Routes.ALERTAS) }
-                )
-            }
-        }
+        dashboardGraph(navController, appContainer)
 
         composable(Routes.INDICADORES) {
             val indicadoresVM: IndicadoresViewModel = viewModel(
@@ -105,7 +96,6 @@ fun AppNavHost(
             }
         }
 
-        // 🔥 Llama a la función que define el grafo de solicitudes anidado
         solicitudesGraph(navController, appContainer)
 
         composable(Routes.ALERTAS) {
@@ -127,7 +117,9 @@ fun AppNavHost(
                     onLogout = {
                         RetrofitClient.authInterceptor.setToken(null)
                         navController.navigate(Routes.LOGIN) {
-                            popUpTo(Routes.DASHBOARD) { inclusive = true }
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                inclusive = true
+                            }
                         }
                     }
                 )
@@ -136,13 +128,43 @@ fun AppNavHost(
     }
 }
 
-// 🔥 ARQUITECTURA CORRECTA: Grafo de navegación anidado para compartir el ViewModel
+private fun NavGraphBuilder.dashboardGraph(navController: NavHostController, appContainer: AppContainer) {
+    navigation(startDestination = Routes.DASHBOARD, route = Routes.DASHBOARD_GRAPH) {
+
+        composable(Routes.DASHBOARD) { backStackEntry ->
+            val parentEntry = remember(backStackEntry) { navController.getBackStackEntry(Routes.DASHBOARD_GRAPH) }
+            val insightVM: InsightPanelViewModel = viewModel(
+                viewModelStoreOwner = parentEntry,
+                factory = InsightPanelViewModelFactory(appContainer.insightRepository)
+            )
+
+            MainScreen(navController = navController) {
+                DashboardScreen(
+                    viewModel = insightVM,
+                    onNavigateToAlerts = { navController.navigate(Routes.ALERTAS) },
+                    onNavigateToRegression = { navController.navigate(Routes.REGRESSION) }
+                )
+            }
+        }
+
+        composable(Routes.REGRESSION) { backStackEntry ->
+            val parentEntry = remember(backStackEntry) { navController.getBackStackEntry(Routes.DASHBOARD_GRAPH) }
+            val insightVM: InsightPanelViewModel = viewModel(
+                viewModelStoreOwner = parentEntry,
+                factory = InsightPanelViewModelFactory(appContainer.insightRepository)
+            )
+
+            RegressionScreen(viewModel = insightVM) {
+                navController.popBackStack()
+            }
+        }
+    }
+}
+
 private fun NavGraphBuilder.solicitudesGraph(navController: NavHostController, appContainer: AppContainer) {
     navigation(startDestination = Routes.SOLICITUDES_LIST, route = Routes.SOLICITUDES_GRAPH) {
 
-        // PANTALLA DE LISTA
         composable(Routes.SOLICITUDES_LIST) { backStackEntry ->
-            // Obtenemos el ViewModel asociado al grafo padre, garantizando que sea la misma instancia
             val parentEntry = remember(backStackEntry) { navController.getBackStackEntry(Routes.SOLICITUDES_GRAPH) }
             val solicitudesVM: SolicitudesViewModel = viewModel(viewModelStoreOwner = parentEntry, factory = SolicitudesViewModelFactory(appContainer.solicitudesRepository))
 
@@ -153,7 +175,6 @@ private fun NavGraphBuilder.solicitudesGraph(navController: NavHostController, a
             )
         }
 
-        // PANTALLA DE CREAR
         composable(Routes.SOLICITUD_CREAR) { backStackEntry ->
             val parentEntry = remember(backStackEntry) { navController.getBackStackEntry(Routes.SOLICITUDES_GRAPH) }
             val solicitudesVM: SolicitudesViewModel = viewModel(viewModelStoreOwner = parentEntry, factory = SolicitudesViewModelFactory(appContainer.solicitudesRepository))
@@ -161,7 +182,6 @@ private fun NavGraphBuilder.solicitudesGraph(navController: NavHostController, a
             CrearSolicitudScreen(viewModel = solicitudesVM, onBack = { navController.popBackStack() })
         }
 
-        // PANTALLA DE EDITAR
         composable(
             route = Routes.SOLICITUD_EDITAR,
             arguments = listOf(navArgument("id") { type = NavType.IntType })

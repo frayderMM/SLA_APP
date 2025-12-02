@@ -52,8 +52,12 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ink.strokes)
-
+    // Asegúrate de tener estas (o versiones más recientes como 2.0.0-alpha.X)
+    implementation("com.patrykandpatrick.vico:compose:1.14.0")
+    implementation("com.patrykandpatrick.vico:compose-m3:1.14.0")
+    implementation("com.patrykandpatrick.vico:core:1.14.0") // <-- Esta es vital para ComposedChart
     testImplementation(libs.junit)
+
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -122,6 +126,10 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.9.0")
 
 
+    // ============================================================
+    // VICO CHARTS
+    // ============================================================
+    implementation("com.patrykandpatrick.vico:compose-m3:1.14.0")
 
 
 }

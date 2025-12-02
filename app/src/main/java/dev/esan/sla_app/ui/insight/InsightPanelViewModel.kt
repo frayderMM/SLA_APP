@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dev.esan.sla_app.data.repository.InsightRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class InsightPanelViewModel(
@@ -16,26 +17,29 @@ class InsightPanelViewModel(
 
     fun load(tipo: String) {
         viewModelScope.launch {
-            try {
-                _state.value = InsightPanelState(loading = true, tipoSla = tipo)
+            _state.update { it.copy(loading = true, tipoSla = tipo, error = null) }
 
+            try {
                 val ind = repo.getIndicadores(tipo)
                 val hist = repo.getHistorico(tipo)
                 val reg = repo.getRegresion(tipo)
 
-                _state.value = InsightPanelState(
-                    loading = false,
-                    tipoSla = tipo,
-                    indicadores = ind,
-                    historico = hist,
-                    regresion = reg
-                )
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        indicadores = ind,
+                        historico = hist,
+                        regresion = reg
+                    )
+                }
 
             } catch (e: Exception) {
-                _state.value = InsightPanelState(
-                    loading = false,
-                    error = e.message
-                )
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        error = e.message
+                    )
+                }
             }
         }
     }
