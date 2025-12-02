@@ -52,6 +52,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ink.strokes)
+    implementation(libs.androidx.compose.foundation)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -123,5 +124,10 @@ dependencies {
 
 
 
+
+    // ============================================================
+    // 🔥 WORK MANAGER
+    // ============================================================
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 
 }

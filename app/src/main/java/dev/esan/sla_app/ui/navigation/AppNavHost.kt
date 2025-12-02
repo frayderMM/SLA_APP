@@ -113,8 +113,21 @@ fun AppNavHost(
                 factory = AlertasViewModelFactory(appContainer.alertasRepository)
             )
             MainScreen(navController = navController) {
-                AlertasScreen(viewModel = alertasVM)
+                AlertasScreen(
+                    viewModel = alertasVM,
+                    onNavigateToEmailConfig = { navController.navigate(Routes.EMAIL_CONFIG) }
+                )
             }
+        }
+
+        composable(Routes.EMAIL_CONFIG) {
+            val emailVM: dev.esan.sla_app.ui.email.EmailConfigViewModel = viewModel(
+                factory = dev.esan.sla_app.ui.email.EmailConfigViewModelFactory(appContainer.emailRepository)
+            )
+            dev.esan.sla_app.ui.email.EmailConfigScreen(
+                viewModel = emailVM,
+                onBack = { navController.popBackStack() }
+            )
         }
 
         composable(Routes.PROFILE) {
