@@ -30,6 +30,7 @@ import dev.esan.sla_app.ui.pdf.PdfViewModelFactory
 import dev.esan.sla_app.ui.profile.*
 import dev.esan.sla_app.ui.sla.*
 import dev.esan.sla_app.ui.solicitudes.*
+import dev.esan.sla_app.ui.user_management.*
 import kotlinx.coroutines.flow.first
 
 @Composable
@@ -132,9 +133,22 @@ fun AppNavHost(
                         navController.navigate(Routes.LOGIN) {
                             popUpTo(Routes.DASHBOARD) { inclusive = true }
                         }
+                    },
+                    onNavigateToUserManagement = {
+                        navController.navigate(Routes.ADD_USER)
                     }
                 )
             }
+        }
+
+        composable(Routes.ADD_USER) {
+            val userManagementVM: UserManagementViewModel = viewModel(
+                factory = UserManagementViewModelFactory(appContainer.authRepository)
+            )
+            AddUserScreen(
+                viewModel = userManagementVM,
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
     }
 }

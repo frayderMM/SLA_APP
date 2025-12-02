@@ -14,4 +14,8 @@ object Routes {
     const val SOLICITUDES_LIST = "solicitudes_list"  // Ruta para la pantalla de la lista
     const val SOLICITUD_CREAR = "solicitudes_crear"
     const val SOLICITUD_EDITAR = "solicitudes_editar/{id}"
+
+    // Rutas para gestión de usuarios
+    const val USER_MANAGEMENT = "user_management"
+    const val ADD_USER = "add_user"
 }

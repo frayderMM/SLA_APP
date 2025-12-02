@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.collectLatest
 fun ProfileScreen(
     viewModel: ProfileViewModel,
     onLogout: () -> Unit,
+    onNavigateToUserManagement: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showChangePasswordDialog by remember { mutableStateOf(false) }
@@ -111,7 +112,11 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(26.dp))
 
         // MENÚ DE OPCIONES
-        CardMenuOcean(onSecurityClick = { showChangePasswordDialog = true })
+        CardMenuOcean(
+            onSecurityClick = { showChangePasswordDialog = true },
+            onUserManagementClick = onNavigateToUserManagement,
+            isAdmin = currentUser.email == "analista@tcs.com"
+        )
 
         Spacer(modifier = Modifier.height(30.dp))
 
@@ -304,7 +309,11 @@ fun InfoRowOcean(icon: Int, label: String, value: String) {
 // ===================================================================
 //
 @Composable
-fun CardMenuOcean(onSecurityClick: () -> Unit) {
+fun CardMenuOcean(
+    onSecurityClick: () -> Unit,
+    onUserManagementClick: () -> Unit = {},
+    isAdmin: Boolean = false
+) {
 
     Card(
         modifier = Modifier
@@ -327,6 +336,12 @@ fun CardMenuOcean(onSecurityClick: () -> Unit) {
             Divider()
 
             MenuItemOcean(R.drawable.ic_security, "Seguridad", onClick = onSecurityClick)
+            
+            // Mostrar opción de gestión de usuarios solo para administradores
+            if (isAdmin) {
+                Divider()
+                MenuItemOcean(R.drawable.ic_user, "Gestionar Usuarios", onClick = onUserManagementClick)
+            }
         }
     }
 }
