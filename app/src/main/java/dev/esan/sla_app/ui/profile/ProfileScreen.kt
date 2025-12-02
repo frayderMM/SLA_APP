@@ -1,11 +1,16 @@
 package dev.esan.sla_app.ui.profile
 
+import android.widget.Toast
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -14,8 +19,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.esan.sla_app.R
@@ -27,6 +35,33 @@ fun ProfileScreen(
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showChangePasswordDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    // Observar el resultado del cambio de contraseña
+    LaunchedEffect(Unit) {
+        viewModel.changePasswordResult.collectLatest {
+            it.fold(
+                onSuccess = {
+                    Toast.makeText(context, "Contraseña cambiada con éxito", Toast.LENGTH_SHORT).show()
+                },
+                onFailure = {
+                    Toast.makeText(context, "Error al cambiar la contraseña", Toast.LENGTH_SHORT).show()
+                }
+            )
+        }
+    }
+
+    if (showChangePasswordDialog) {
+        ChangePasswordDialog(
+            onDismiss = { showChangePasswordDialog = false },
+            onChangePassword = { currentPassword, newPassword ->
+                viewModel.changePassword(currentPassword, newPassword)
+                showChangePasswordDialog = false
+            }
+        )
+    }
+
     // 🔥 1. OBSERVAR EL ESTADO CORRECTO DEL VIEWMODEL
     val user by viewModel.userProfileState.collectAsState()
 
@@ -76,7 +111,7 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(26.dp))
 
         // MENÚ DE OPCIONES
-        CardMenuOcean()
+        CardMenuOcean(onSecurityClick = { showChangePasswordDialog = true })
 
         Spacer(modifier = Modifier.height(30.dp))
 
@@ -269,7 +304,7 @@ fun InfoRowOcean(icon: Int, label: String, value: String) {
 // ===================================================================
 //
 @Composable
-fun CardMenuOcean() {
+fun CardMenuOcean(onSecurityClick: () -> Unit) {
 
     Card(
         modifier = Modifier
@@ -282,28 +317,28 @@ fun CardMenuOcean() {
 
         Column(modifier = Modifier.padding(6.dp)) {
 
-            MenuItemOcean(R.drawable.ic_notifications, "Notificaciones")
+            MenuItemOcean(R.drawable.ic_notifications, "Notificaciones", onClick = {})
             Divider()
 
-            MenuItemOcean(R.drawable.ic_settings, "Configuración")
+            MenuItemOcean(R.drawable.ic_settings, "Configuración", onClick = {})
             Divider()
 
-            MenuItemOcean(R.drawable.ic_help, "Centro de ayuda")
+            MenuItemOcean(R.drawable.ic_help, "Centro de ayuda", onClick = {})
             Divider()
 
-            MenuItemOcean(R.drawable.ic_security, "Seguridad")
+            MenuItemOcean(R.drawable.ic_security, "Seguridad", onClick = onSecurityClick)
         }
     }
 }
 
 @Composable
-fun MenuItemOcean(icon: Int, title: String) {
+fun MenuItemOcean(icon: Int, title: String, onClick: () -> Unit) {
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
-            .clickable { /* sin navegación */ }
+            .clickable(onClick = onClick)
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -334,6 +369,100 @@ fun MenuItemOcean(icon: Int, title: String) {
     }
 }
 
+@Composable
+fun ChangePasswordDialog(
+    onDismiss: () -> Unit,
+    onChangePassword: (String, String) -> Unit
+) {
+    var currentPassword by rememberSaveable { mutableStateOf("") }
+    var newPassword by rememberSaveable { mutableStateOf("") }
+    var confirmPassword by rememberSaveable { mutableStateOf("") }
+    var currentPasswordVisible by rememberSaveable { mutableStateOf(false) }
+    var newPasswordVisible by rememberSaveable { mutableStateOf(false) }
+    var confirmPasswordVisible by rememberSaveable { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Cambiar Contraseña") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = currentPassword,
+                    onValueChange = { currentPassword = it },
+                    label = { Text("Contraseña Actual") },
+                    singleLine = true,
+                    visualTransformation = if (currentPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        val image = if (currentPasswordVisible)
+                            Icons.Filled.Visibility
+                        else
+                            Icons.Filled.VisibilityOff
+
+                        IconButton(onClick = { currentPasswordVisible = !currentPasswordVisible }) {
+                            Icon(imageVector = image, contentDescription = if (currentPasswordVisible) "Ocultar contraseña" else "Mostrar contraseña")
+                        }
+                    }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = newPassword,
+                    onValueChange = { newPassword = it },
+                    label = { Text("Nueva Contraseña") },
+                    singleLine = true,
+                    visualTransformation = if (newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        val image = if (newPasswordVisible)
+                            Icons.Filled.Visibility
+                        else
+                            Icons.Filled.VisibilityOff
+
+                        IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
+                            Icon(imageVector = image, contentDescription = if (newPasswordVisible) "Ocultar contraseña" else "Mostrar contraseña")
+                        }
+                    }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    label = { Text("Confirmar Nueva Contraseña") },
+                    singleLine = true,
+                    visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    isError = newPassword != confirmPassword && confirmPassword.isNotEmpty(),
+                    trailingIcon = {
+                        val image = if (confirmPasswordVisible)
+                            Icons.Filled.Visibility
+                        else
+                            Icons.Filled.VisibilityOff
+
+                        IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                            Icon(imageVector = image, contentDescription = if (confirmPasswordVisible) "Ocultar contraseña" else "Mostrar contraseña")
+                        }
+                    }
+                )
+                if (newPassword != confirmPassword && confirmPassword.isNotEmpty()) {
+                    Text("Las contraseñas no coinciden", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onChangePassword(currentPassword, newPassword)
+                },
+                enabled = currentPassword.isNotEmpty() && newPassword.isNotEmpty() && newPassword == confirmPassword
+            ) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
 //
 // ===================================================================
 // ⭐ BOTÓN CERRAR SESIÓN
@@ -357,7 +486,7 @@ fun LogoutButtonOcean(onClick: () -> Unit) {
             Icon(
                 painter = painterResource(R.drawable.ic_logout),
                 contentDescription = null,
-                tint = Color.White,
+                tint = Color.Red,
                 modifier = Modifier.size(22.dp)
             )
 
@@ -367,7 +496,7 @@ fun LogoutButtonOcean(onClick: () -> Unit) {
                 text = "Cerrar sesión",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color.White
+                color = Color.Red
             )
         }
     }

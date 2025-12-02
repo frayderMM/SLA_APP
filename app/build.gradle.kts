@@ -52,10 +52,8 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ink.strokes)
-    // Asegúrate de tener estas (o versiones más recientes como 2.0.0-alpha.X)
-    implementation("com.patrykandpatrick.vico:compose:1.14.0")
-    implementation("com.patrykandpatrick.vico:compose-m3:1.14.0")
-    implementation("com.patrykandpatrick.vico:core:1.14.0") // <-- Esta es vital para ComposedChart
+    implementation(libs.androidx.compose.foundation)
+
     testImplementation(libs.junit)
 
     androidTestImplementation(libs.androidx.junit)
@@ -131,5 +129,10 @@ dependencies {
     // ============================================================
     implementation("com.patrykandpatrick.vico:compose-m3:1.14.0")
 
+
+    // ============================================================
+    // 🔥 WORK MANAGER
+    // ============================================================
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 
 }
