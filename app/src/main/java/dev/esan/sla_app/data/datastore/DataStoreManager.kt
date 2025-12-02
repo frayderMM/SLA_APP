@@ -5,49 +5,63 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.auth0.android.jwt.JWT
+import com.google.gson.Gson
 import dev.esan.sla_app.data.model.AuthenticatedUser
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import java.lang.Exception
 
 class DataStoreManager(private val context: Context) {
 
     companion object {
         private val Context.dataStore by preferencesDataStore("damsla_prefs")
-        val TOKEN_KEY = stringPreferencesKey("jwt_token")
+        val USER_KEY = stringPreferencesKey("authenticated_user")
+        val TOKEN_KEY = stringPreferencesKey("jwt_token") // Keep for get token flow
     }
+
+    private val gson = Gson()
 
     val token: Flow<String?> = context.dataStore.data.map { prefs ->
         prefs[TOKEN_KEY]
     }
 
-    suspend fun saveToken(value: String) {
+    suspend fun saveUser(user: AuthenticatedUser) {
         context.dataStore.edit { prefs ->
-            prefs[TOKEN_KEY] = value
+            prefs[USER_KEY] = gson.toJson(user)
+            prefs[TOKEN_KEY] = user.token // Also save raw token for interceptor
         }
     }
 
-    suspend fun clearToken() {
+    suspend fun clearUser() {
         context.dataStore.edit { prefs ->
+            prefs.remove(USER_KEY)
             prefs.remove(TOKEN_KEY)
         }
     }
 
-    // ✨ NUEVA FUNCIÓN PARA DECODIFICAR EL TOKEN ✨
     fun getAuthenticatedUserFlow(): Flow<AuthenticatedUser?> {
         return context.dataStore.data.map { preferences ->
-            val token = preferences[TOKEN_KEY] ?: return@map null
-            try {
-                val jwt = JWT(token)
-                AuthenticatedUser(
-                    id = jwt.subject ?: "", // "sub" es el ID del usuario
-                    email = jwt.getClaim("email").asString() ?: "",
-                    role = jwt.getClaim("rol").asString() ?: "Usuario", // Ajusta el nombre del claim si es diferente
-                    nombre = jwt.getClaim("nombre").asString() // Ajusta si existe
-                )
-            } catch (e: Exception) {
-                // El token es inválido o está malformado
-                null
+            val userJson = preferences[USER_KEY]
+            if (userJson != null) {
+                gson.fromJson(userJson, AuthenticatedUser::class.java)
+            } else {
+                // Fallback for old JWT decoding logic if needed, or just return null
+                val token = preferences[TOKEN_KEY]
+                if (token != null) {
+                    try {
+                        val jwt = JWT(token)
+                        AuthenticatedUser(
+                            token = token,
+                            id = jwt.subject ?: "",
+                            email = jwt.getClaim("email").asString() ?: "",
+                            role = jwt.getClaim("rol").asString() ?: "Usuario",
+                            nombre = jwt.getClaim("nombre").asString()
+                        )
+                    } catch (e: Exception) {
+                        null
+                    }
+                } else {
+                    null
+                }
             }
         }
     }
