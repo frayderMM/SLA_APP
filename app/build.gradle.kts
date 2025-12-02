@@ -55,6 +55,7 @@ dependencies {
     implementation(libs.androidx.compose.foundation)
 
     testImplementation(libs.junit)
+
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -123,6 +124,10 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.9.0")
 
 
+    // ============================================================
+    // VICO CHARTS
+    // ============================================================
+    implementation("com.patrykandpatrick.vico:compose-m3:1.14.0")
 
 
     // ============================================================

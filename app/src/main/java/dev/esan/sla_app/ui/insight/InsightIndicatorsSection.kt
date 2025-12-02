@@ -48,15 +48,6 @@ fun InsightIndicatorsSection(
                         historico = state.historico!!  // ← YA ES List<InsightPoint>
                     )
                 }
-
-                // ========= REGRESIÓN (si existe) =========
-                if (state.regresion != null) {
-                    Spacer(Modifier.height(12.dp))
-
-                    InsightRegresionCard(
-                        data = state.regresion!!
-                    )
-                }
             }
         }
     }
