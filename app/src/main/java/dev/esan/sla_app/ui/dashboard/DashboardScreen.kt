@@ -17,8 +17,22 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
+import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
+import com.patrykandpatrick.vico.compose.chart.Chart
+import com.patrykandpatrick.vico.compose.chart.column.columnChart
+import com.patrykandpatrick.vico.core.axis.AxisPosition
+import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
+import com.patrykandpatrick.vico.core.entry.ChartEntryModelProducer
+import com.patrykandpatrick.vico.core.entry.entryOf
+import dev.esan.sla_app.data.remote.dto.insight.InsightHistoricoDto
 import dev.esan.sla_app.ui.insight.InsightPanelScreen
 import dev.esan.sla_app.ui.insight.InsightPanelViewModel
+import java.text.ParseException
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,6 +80,46 @@ fun DashboardScreen(
             Spacer(Modifier.height(16.dp))
 
             InsightPanelScreen(viewModel)
+
+            Spacer(Modifier.height(16.dp))
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        "Solicitudes por mes",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(250.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        when {
+                            state.loading && state.historico == null -> {
+                                CircularProgressIndicator()
+                            }
+                            state.error != null -> {
+                                Text("Error: ${state.error}", color = MaterialTheme.colorScheme.error)
+                            }
+                            state.historico != null && state.historico!!.historico.isNotEmpty() -> {
+                                FrequencyChart(historico = state.historico!!, selectedSla = selectedSla)
+                            }
+                            else -> {
+                                Text("No hay datos históricos disponibles.")
+                            }
+                        }
+                    }
+                }
+            }
 
             Spacer(Modifier.height(16.dp))
 
@@ -149,6 +203,72 @@ fun SlaDistributionChart() {
             }
         }
     }
+}
+
+@Composable
+fun FrequencyChart(historico: InsightHistoricoDto, selectedSla: String) {
+    val chartEntryModelProducer = remember { ChartEntryModelProducer() }
+    var monthLabels by remember { mutableStateOf<List<String>>(emptyList()) }
+
+    LaunchedEffect(historico, selectedSla) {
+        val monthData = mutableMapOf<String, Double>()
+        val cal = Calendar.getInstance()
+        val monthKeyFormat = SimpleDateFormat("yyyy-MM", Locale.US)
+        for (i in 0 until 12) {
+            monthData[monthKeyFormat.format(cal.time)] = 0.0
+            cal.add(Calendar.MONTH, -1)
+        }
+
+        historico.historico.forEach { item ->
+            val itemPeriodo = item.periodo
+            val date: Date? = itemPeriodo.toDoubleOrNull()?.toLong()?.let {
+                if (it.toString().length == 10) Date(it * 1000) else Date(it)
+            } ?: try {
+                SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(itemPeriodo)
+            } catch (e: ParseException) {
+                try {
+                    SimpleDateFormat("yyyy-MM", Locale.US).parse(itemPeriodo)
+                } catch (e2: ParseException) {
+                    null
+                }
+            }
+
+            date?.let {
+                val key = monthKeyFormat.format(it)
+                if (monthData.containsKey(key)) {
+                    monthData[key] = item.porcentaje
+                }
+            }
+        }
+
+        val sortedKeys = monthData.keys.sorted()
+        val entries = mutableListOf<com.patrykandpatrick.vico.core.entry.ChartEntry>()
+        val labels = mutableListOf<String>()
+        val labelFormat = SimpleDateFormat("MMM", Locale.US)
+        val keyParser = SimpleDateFormat("yyyy-MM", Locale.US)
+
+        sortedKeys.forEachIndexed { index, key ->
+            entries.add(entryOf(index.toFloat(), monthData[key] ?: 0.0))
+            keyParser.parse(key)?.let {
+                labels.add(labelFormat.format(it))
+            } ?: labels.add("")
+        }
+
+        chartEntryModelProducer.setEntries(entries)
+        monthLabels = labels
+    }
+
+    val bottomAxisValueFormatter = AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
+        monthLabels.getOrElse(value.toInt()) { "" }
+    }
+
+    Chart(
+        modifier = Modifier.fillMaxSize(),
+        chart = columnChart(),
+        chartModelProducer = chartEntryModelProducer,
+        startAxis = rememberStartAxis(),
+        bottomAxis = rememberBottomAxis(valueFormatter = bottomAxisValueFormatter),
+    )
 }
 
 
