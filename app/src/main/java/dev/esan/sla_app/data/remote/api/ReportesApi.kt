@@ -15,7 +15,6 @@ interface ReportesApi {
      */
     @Streaming
     @GET("api/Reportes/pdf")
-    suspend fun downloadPdfReport(
-        @Query("tipoSla") tipoSla: String? // El tipo de SLA es opcional
-    ): Response<ResponseBody>
+    suspend fun downloadPdfReport(): Response<ResponseBody>
+
 }

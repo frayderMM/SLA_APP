@@ -5,6 +5,6 @@ object Constants {
     //const val BASE_URL = "http://10.0.2.2:5149/"
     const val BASE_URL = "https://sla-api.onrender.com/"
 
-    const val RESEND_API_KEY = "re_WLw9Dm6c_MUb73qZL6Xo69z6p3qi3o4XW"
+    const val RESEND_API_KEY = "re_4QBwxjhR_23euJHtSAAK1QV2RgpUMWRyV"
     const val RESEND_FROM_EMAIL = "no-reply@manuel.best"
 }

@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,9 +29,9 @@ import dev.esan.sla_app.ui.pdf.PdfViewModel
 import dev.esan.sla_app.ui.pdf.PdfViewModelFactory
 import dev.esan.sla_app.ui.profile.*
 import dev.esan.sla_app.ui.regression.RegressionScreen
+import dev.esan.sla_app.ui.security.SecurityScreen // <-- IMPORTAR LA NUEVA PANTALLA
 import dev.esan.sla_app.ui.sla.*
 import dev.esan.sla_app.ui.solicitudes.*
-import kotlinx.coroutines.flow.first
 
 @Composable
 fun AppNavHost(
@@ -43,22 +42,9 @@ fun AppNavHost(
         DefaultAppContainer(context)
     }
 
-    LaunchedEffect(Unit) {
-        val token = appContainer.dataStoreManager.token.first()
-        val startDestination = if (token != null) {
-            RetrofitClient.authInterceptor.setToken(token)
-            Routes.DASHBOARD_GRAPH
-        } else {
-            Routes.LOGIN
-        }
-        navController.navigate(startDestination) {
-            popUpTo(Routes.SPLASH) { inclusive = true }
-        }
-    }
-
     NavHost(
         navController = navController,
-        startDestination = Routes.SPLASH
+        startDestination = Routes.LOGIN
     ) {
 
         composable(Routes.SPLASH) {
@@ -133,20 +119,35 @@ fun AppNavHost(
                     onLogout = {
                         RetrofitClient.authInterceptor.setToken(null)
                         navController.navigate(Routes.LOGIN) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                inclusive = true
-                            }
+                            popUpTo(navController.graph.findStartDestination().id) { inclusive = true }
                         }
-                    }
+                    },
+                    // --- CONECTAR LA NAVEGACIÓN ---
+                    onNavigateToSecurity = { navController.navigate(Routes.SECURITY) }
                 )
             }
+        }
+
+        // --- AÑADIR LA NUEVA PANTALLA AL GRAFO ---
+        composable(Routes.SECURITY) {
+            val profileVM: ProfileViewModel = viewModel(
+                factory = ProfileViewModelFactory(
+                    dataStore = appContainer.dataStoreManager,
+                    authRepository = appContainer.authRepository
+                )
+            )
+            SecurityScreen(
+                viewModel = profileVM,
+                onBack = { navController.popBackStack() }
+            )
         }
     }
 }
 
+// ... (El resto del archivo se mantiene igual)
+
 private fun NavGraphBuilder.dashboardGraph(navController: NavHostController, appContainer: AppContainer) {
     navigation(startDestination = Routes.DASHBOARD, route = Routes.DASHBOARD_GRAPH) {
-
         composable(Routes.DASHBOARD) { backStackEntry ->
             val parentEntry = remember(backStackEntry) { navController.getBackStackEntry(Routes.DASHBOARD_GRAPH) }
             val insightVM: InsightPanelViewModel = viewModel(
@@ -162,7 +163,6 @@ private fun NavGraphBuilder.dashboardGraph(navController: NavHostController, app
                 )
             }
         }
-
         composable(Routes.REGRESSION) { backStackEntry ->
             val parentEntry = remember(backStackEntry) { navController.getBackStackEntry(Routes.DASHBOARD_GRAPH) }
             val insightVM: InsightPanelViewModel = viewModel(
@@ -179,7 +179,6 @@ private fun NavGraphBuilder.dashboardGraph(navController: NavHostController, app
 
 private fun NavGraphBuilder.solicitudesGraph(navController: NavHostController, appContainer: AppContainer) {
     navigation(startDestination = Routes.SOLICITUDES_LIST, route = Routes.SOLICITUDES_GRAPH) {
-
         composable(Routes.SOLICITUDES_LIST) { backStackEntry ->
             val parentEntry = remember(backStackEntry) { navController.getBackStackEntry(Routes.SOLICITUDES_GRAPH) }
             val solicitudesVM: SolicitudesViewModel = viewModel(viewModelStoreOwner = parentEntry, factory = SolicitudesViewModelFactory(appContainer.solicitudesRepository))
@@ -187,17 +186,16 @@ private fun NavGraphBuilder.solicitudesGraph(navController: NavHostController, a
             SolicitudesScreen(
                 viewModel = solicitudesVM,
                 onCrear = { navController.navigate(Routes.SOLICITUD_CREAR) },
-                onEditar = { id -> navController.navigate(Routes.SOLICITUD_EDITAR.replace("{id}", id.toString())) }
+                onEditar = { id -> navController.navigate(Routes.SOLICITUD_EDITAR.replace("{id}", id.toString())) },
+                onBack = { navController.popBackStack() }
             )
         }
-
         composable(Routes.SOLICITUD_CREAR) { backStackEntry ->
             val parentEntry = remember(backStackEntry) { navController.getBackStackEntry(Routes.SOLICITUDES_GRAPH) }
             val solicitudesVM: SolicitudesViewModel = viewModel(viewModelStoreOwner = parentEntry, factory = SolicitudesViewModelFactory(appContainer.solicitudesRepository))
 
             CrearSolicitudScreen(viewModel = solicitudesVM, onBack = { navController.popBackStack() })
         }
-
         composable(
             route = Routes.SOLICITUD_EDITAR,
             arguments = listOf(navArgument("id") { type = NavType.IntType })
