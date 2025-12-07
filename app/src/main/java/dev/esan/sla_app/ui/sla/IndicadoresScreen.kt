@@ -2,6 +2,7 @@ package dev.esan.sla_app.ui.sla
 
 import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
@@ -51,8 +52,59 @@ fun IndicadoresScreen(
     val opcionesEstado = listOf("Todos", "Cumple", "No cumple")
 
     LaunchedEffect(pdfState) {
-        // ... (sin cambios)
+        when (pdfState) {
+
+            PdfDownloadState.Loading -> Unit
+
+            is PdfDownloadState.Success -> {
+                val success = pdfState as PdfDownloadState.Success
+                val body = success.body
+
+                val uri = savePdfToFile(
+                    context = context,
+                    body = body,
+                    fileName = "Reporte_SLA_${System.currentTimeMillis()}.pdf"
+                )
+
+                if (uri != null) {
+                    scope.launch {
+                        snackbarHostState.showSnackbar("PDF descargado correctamente.")
+                    }
+
+                    // Abrir PDF automáticamente
+                    try {
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(uri, "application/pdf")
+                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK
+                        }
+                        context.startActivity(intent)
+
+                    } catch (e: Exception) {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Archivo guardado, pero no se pudo abrir.")
+                        }
+                    }
+
+                } else {
+                    scope.launch {
+                        snackbarHostState.showSnackbar("Error al guardar el PDF.")
+                    }
+                }
+
+                pdfViewModel.resetDownloadState()
+            }
+
+            is PdfDownloadState.Error -> {
+                val err = pdfState as PdfDownloadState.Error
+                scope.launch { snackbarHostState.showSnackbar(err.message) }
+                pdfViewModel.resetDownloadState()
+            }
+
+            PdfDownloadState.Idle -> Unit
+        }
     }
+
+
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Indicadores y Reportes", fontWeight = FontWeight.Bold) }) },
@@ -164,7 +216,7 @@ private fun savePdfToFile(context: Context, body: ResponseBody, fileName: String
     }
     return uri
 }
-
+// ... (sin cambios)
 @Composable
 fun SlaCard(item: SlaIndicadorDto) {
     val cumple = item.resultado.lowercase().startsWith("cumple ")

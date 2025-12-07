@@ -12,11 +12,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Instant
 
 data class SolicitudesListState(
     val isLoading: Boolean = false,
     val solicitudes: List<Solicitud> = emptyList(),
     val slaFilter: String = "Todos",
+    val startDate: Long? = null, // <-- Filtro de fecha de inicio
+    val endDate: Long? = null,   // <-- Filtro de fecha de fin
     val error: String? = null
 )
 
@@ -43,7 +46,7 @@ class SolicitudesViewModel(private val repository: SolicitudesRepository) : View
 
     private fun loadInitialData() {
         viewModelScope.launch {
-            loadTiposSla() 
+            loadTiposSla()
             loadSolicitudes()
         }
     }
@@ -77,26 +80,40 @@ class SolicitudesViewModel(private val repository: SolicitudesRepository) : View
         filterAndEnrichSolicitudes()
     }
 
-    // 🔥 LÓGICA DE FILTRADO Y ENRIQUECIMIENTO COMBINADA
+    fun onDateRangeSelected(startDate: Long?, endDate: Long?) {
+        _listState.update { it.copy(startDate = startDate, endDate = endDate) }
+        filterAndEnrichSolicitudes()
+    }
+
     private fun filterAndEnrichSolicitudes() {
-        val currentFilterName = _listState.value.slaFilter
+        val state = _listState.value
         val tiposSla = _formState.value.tiposSla
 
-        // 1. Filtrar la lista
-        val filteredList = if (currentFilterName == "Todos") {
+        val slaFilteredList = if (state.slaFilter == "Todos") {
             allSolicitudes
         } else {
-            val slaId = tiposSla.find { it.nombre == currentFilterName }?.id
-            if (slaId != null) {
-                allSolicitudes.filter { it.tipoSlaId == slaId }
-            } else {
-                allSolicitudes
-            }
+            val slaId = tiposSla.find { it.nombre == state.slaFilter }?.id
+            if (slaId != null) allSolicitudes.filter { it.tipoSlaId == slaId } else allSolicitudes
         }
 
-        // 2. Enriquecer la lista filtrada con el nombre del SLA
+        val dateFilteredList = if (state.startDate != null && state.endDate != null) {
+            slaFilteredList.filter { solicitud ->
+                try {
+                    val solicitudDate = Instant.parse(solicitud.fechaSolicitud).toEpochMilli()
+                    solicitudDate >= state.startDate && solicitudDate <= state.endDate
+                } catch (e: Exception) {
+                    false
+                }
+            }
+        } else {
+            slaFilteredList
+        }
+
+        // --- 🔥 ORDENAMIENTO AÑADIDO ---
+        val sortedList = dateFilteredList.sortedByDescending { it.fechaSolicitud }
+
         val tiposSlaMap = tiposSla.associateBy { it.id }
-        val enrichedList = filteredList.map { solicitud ->
+        val enrichedList = sortedList.map { solicitud ->
             solicitud.copy(tipoSlaNombre = tiposSlaMap[solicitud.tipoSlaId]?.nombre)
         }
 
@@ -107,9 +124,8 @@ class SolicitudesViewModel(private val repository: SolicitudesRepository) : View
         viewModelScope.launch {
             _formState.update { it.copy(isLoading = true, error = null) }
             try {
-                val dto = CreateSolicitudDto(rol, fechaSolicitud, fechaIngreso, tipoSlaId)
-                repository.createSolicitud(dto)
-                loadSolicitudes() 
+                repository.createSolicitud(CreateSolicitudDto(rol, fechaSolicitud, fechaIngreso, tipoSlaId))
+                loadSolicitudes()
                 _formState.update { it.copy(isLoading = false, navigateBack = true) }
             } catch (e: Exception) {
                 _formState.update { it.copy(isLoading = false, error = e.message) }
@@ -121,8 +137,7 @@ class SolicitudesViewModel(private val repository: SolicitudesRepository) : View
         viewModelScope.launch {
             _formState.update { it.copy(isLoading = true, error = null) }
             try {
-                val dto = UpdateSolicitudDto(rol, fechaSolicitud, fechaIngreso, tipoSlaId)
-                repository.updateSolicitud(id, dto)
+                repository.updateSolicitud(id, UpdateSolicitudDto(rol, fechaSolicitud, fechaIngreso, tipoSlaId))
                 loadSolicitudes()
                 _formState.update { it.copy(isLoading = false, navigateBack = true) }
             } catch (e: Exception) {

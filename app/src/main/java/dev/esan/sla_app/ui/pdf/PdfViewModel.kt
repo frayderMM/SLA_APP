@@ -31,7 +31,8 @@ class PdfViewModel(private val repository: ReportesRepository) : ViewModel() {
         viewModelScope.launch {
             _downloadState.value = PdfDownloadState.Loading
             try {
-                val response = repository.downloadPdfReport(tipoSla)
+                val response = repository.downloadPdfReport()
+
 
                 if (response.isSuccessful && response.body() != null) {
                     _downloadState.value = PdfDownloadState.Success(response.body()!!)
