@@ -120,7 +120,7 @@ class SolicitudesViewModel(private val repository: SolicitudesRepository) : View
         _listState.update { it.copy(isLoading = false, solicitudes = enrichedList) }
     }
 
-    fun createSolicitud(rol: String, fechaSolicitud: String, fechaIngreso: String, tipoSlaId: Int) {
+    fun createSolicitud(rol: String, fechaSolicitud: String, fechaIngreso: String?, tipoSlaId: Int) {
         viewModelScope.launch {
             _formState.update { it.copy(isLoading = true, error = null) }
             try {
@@ -133,7 +133,7 @@ class SolicitudesViewModel(private val repository: SolicitudesRepository) : View
         }
     }
 
-    fun updateSolicitud(id: Int, rol: String, fechaSolicitud: String, fechaIngreso: String, tipoSlaId: Int) {
+    fun updateSolicitud(id: Int, rol: String, fechaSolicitud: String, fechaIngreso: String?, tipoSlaId: Int) {
         viewModelScope.launch {
             _formState.update { it.copy(isLoading = true, error = null) }
             try {

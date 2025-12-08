@@ -1,18 +1,22 @@
 package dev.esan.sla_app.ui.solicitudes
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import dev.esan.sla_app.data.model.TipoSla
 import java.time.Instant
 import java.time.LocalDate
@@ -40,21 +44,33 @@ fun CrearSolicitudScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Nueva Solicitud") },
+                title = { 
+                    Text(
+                        "Nueva Solicitud",
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1565C0)
+                    ) 
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Regresar"
+                            contentDescription = "Regresar",
+                            tint = Color(0xFF1565C0)
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.White
+                )
             )
         }
     ) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
+                .fillMaxSize()
+                .background(Color(0xFFF8F9FA))
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -64,64 +80,179 @@ fun CrearSolicitudScreen(
             var fechaIngreso by remember { mutableStateOf<LocalDateTime?>(null) }
             var selectedSlaId by remember { mutableStateOf<Int?>(null) }
 
-            OutlinedTextField(
-                value = rol,
-                onValueChange = { rol = it },
-                label = { Text("Rol") },
-                modifier = Modifier.fillMaxWidth()
-            )
+            // Card de Información Básica
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(2.dp, RoundedCornerShape(12.dp)),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        "Información Básica",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1565C0)
+                    )
+                    
+                    OutlinedTextField(
+                        value = rol,
+                        onValueChange = { rol = it },
+                        label = { Text("Rol") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                tint = Color(0xFF1565C0)
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF1565C0),
+                            focusedLabelColor = Color(0xFF1565C0)
+                        )
+                    )
+                }
+            }
 
-            // --- COMPONENTE DE FECHA MEJORADO Y CORREGIDO ---
-            StyledDatePicker(
-                label = "Fecha de Solicitud",
-                selectedDateTime = fechaSolicitud,
-                onDateTimeSelected = { fechaSolicitud = it }
-            )
+            // Card de Fechas
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(2.dp, RoundedCornerShape(12.dp)),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        "Fechas",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1565C0)
+                    )
+                    
+                    StyledDatePicker(
+                        label = "Fecha de Solicitud",
+                        selectedDateTime = fechaSolicitud,
+                        onDateTimeSelected = { fechaSolicitud = it }
+                    )
 
-            StyledDatePicker(
-                label = "Fecha de Ingreso",
-                selectedDateTime = fechaIngreso,
-                onDateTimeSelected = { fechaIngreso = it }
-            )
+                    StyledDatePicker(
+                        label = "Fecha de Ingreso",
+                        selectedDateTime = fechaIngreso,
+                        onDateTimeSelected = { fechaIngreso = it }
+                    )
+                }
+            }
 
-            TipoSlaDropdown(
-                tiposSla = formState.tiposSla,
-                selectedId = selectedSlaId,
-                onSelect = { selectedSlaId = it }
-            )
+            // Card de Tipo SLA
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(2.dp, RoundedCornerShape(12.dp)),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        "Tipo de SLA",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1565C0)
+                    )
+                    
+                    TipoSlaDropdown(
+                        tiposSla = formState.tiposSla,
+                        selectedId = selectedSlaId,
+                        onSelect = { selectedSlaId = it }
+                    )
+                }
+            }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.weight(1f))
 
+            // Botón de Guardar Moderno
             Button(
-                modifier = Modifier.fillMaxWidth().height(48.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
                 onClick = {
                     val fechaSolicitudIso = fechaSolicitud?.formatToIsoString() ?: ""
-                    val fechaIngresoIso = fechaIngreso?.formatToIsoString() ?: ""
+                    val fechaIngresoIso = fechaIngreso?.formatToIsoString()
 
                     selectedSlaId?.let {
                         viewModel.createSolicitud(rol, fechaSolicitudIso, fechaIngresoIso, it)
                     }
                 },
-                enabled = !formState.isLoading && rol.isNotEmpty() && fechaSolicitud != null && fechaIngreso != null && selectedSlaId != null
+                enabled = !formState.isLoading && rol.isNotEmpty() && fechaSolicitud != null && selectedSlaId != null,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF1565C0)
+                ),
+                shape = RoundedCornerShape(12.dp)
             ) {
                 if (formState.isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color.White
+                    )
                 } else {
-                    Text("Guardar Solicitud")
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null
+                        )
+                        Text(
+                            "Crear Solicitud",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 
             formState.error?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFFFEBEE)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = Color(0xFFD32F2F)
+                        )
+                        Text(
+                            it,
+                            color = Color(0xFFD32F2F),
+                            fontSize = 14.sp
+                        )
+                    }
+                }
             }
         }
     }
 }
 
-/**
- * Componente de UI con estilo profesional para seleccionar una fecha.
- * La hora se establece automáticamente a la hora actual.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun StyledDatePicker(
@@ -135,33 +266,54 @@ private fun StyledDatePicker(
         selectedDateTime?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
     }
 
-    // Contenedor principal que es clickable
+    // Contenedor principal clickable con estilo moderno
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
             .clickable { showDatePicker = true },
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+        border = BorderStroke(
+            1.dp,
+            if (formattedDateTime != null) Color(0xFF1565C0) else Color(0xFFBDBDBD)
+        ),
+        color = Color.Transparent
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Filled.DateRange, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Icon(
+                Icons.Default.DateRange,
+                contentDescription = null,
+                tint = Color(0xFF1565C0)
+            )
             Spacer(Modifier.width(16.dp))
             if (formattedDateTime != null) {
                 Column {
-                    Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-                    Text(formattedDateTime, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF1565C0),
+                        fontSize = 12.sp
+                    )
+                    Text(
+                        formattedDateTime,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             } else {
-                Text(label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    label,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color(0xFF757575)
+                )
             }
         }
     }
 
-    // Lógica del DatePickerDialog (ahora simplificada)
+    // DatePickerDialog
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
         DatePickerDialog(
@@ -171,7 +323,6 @@ private fun StyledDatePicker(
                     onClick = {
                         datePickerState.selectedDateMillis?.let { millis ->
                             val selectedDate = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
-                            // 🔥 SE COMBINA LA FECHA SELECCIONADA CON LA HORA ACTUAL
                             val finalDateTime = LocalDateTime.of(selectedDate, LocalTime.now())
                             onDateTimeSelected(finalDateTime)
                             showDatePicker = false
@@ -210,8 +361,19 @@ fun TipoSlaDropdown(
             onValueChange = {},
             readOnly = true,
             label = { Text("Tipo de SLA") },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = null,
+                    tint = Color(0xFF1565C0)
+                )
+            },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-            modifier = Modifier.fillMaxWidth().menuAnchor()
+            modifier = Modifier.fillMaxWidth().menuAnchor(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF1565C0),
+                focusedLabelColor = Color(0xFF1565C0)
+            )
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             if (tiposSla.isEmpty()) {
