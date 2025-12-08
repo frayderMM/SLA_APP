@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
@@ -51,30 +52,43 @@ fun DashboardScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Dashboard SLA") },
+                title = {
+                    Text(
+                        "Dashboard SLA",
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0A3D91)
+                    )
+                },
                 actions = {
                     IconButton(onClick = onNavigateToAlerts) {
                         Icon(
                             imageVector = Icons.Default.Notifications,
-                            contentDescription = "Ir a Alertas"
+                            contentDescription = "Ir a Alertas",
+                            tint = Color(0xFF0A3D91)
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.White
+                )
             )
-        }
+        },
+        containerColor = Color(0xFFF8F9FC)
     ) { padding ->
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFFF8F9FC))
                 .verticalScroll(rememberScrollState())
         ) {
 
+            Spacer(Modifier.height(16.dp))
+
             SlaSelector(
                 selected = selectedSla,
-                onSelect = { selectedSla = it }
+                onSelect = { selectedSla = it },
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
 
             Spacer(Modifier.height(16.dp))
@@ -87,12 +101,19 @@ fun DashboardScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
+                    SlaDistributionChart()
+
+                    Divider(modifier = Modifier.padding(vertical = 16.dp))
+
                     Text(
-                        "Solicitudes por mes",
-                        style = MaterialTheme.typography.titleMedium
+                        "N° de Solicitudes por Mes",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
                     )
 
                     Spacer(Modifier.height(8.dp))
@@ -123,81 +144,91 @@ fun DashboardScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            SlaDistributionChart()
-
-            Spacer(Modifier.height(16.dp))
-
             Button(
                 onClick = onNavigateToRegression,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = 16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF0A3D91)
+                ),
+                shape = RoundedCornerShape(10.dp)
             ) {
-                Text("Ver Regresión Lineal")
+                Text(
+                    "Ver Regresión Lineal",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
+
+            Spacer(Modifier.height(16.dp))
         }
     }
 }
 
 @Composable
 fun SlaDistributionChart() {
-    // Datos estáticos para el gráfico circular
     val data = mapOf(
         "SLA1" to 65f,
         "SLA2" to 35f
     )
     val colors = listOf(Color(0xFF007BFF), Color(0xFF28A745), Color(0xFFFFC107), Color(0xFFDC3545))
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                "Distribución Total de SLAs",
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(Modifier.height(16.dp))
+        Text(
+            "Distribución Total de SLAs",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(Modifier.height(16.dp))
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Gráfico Circular
-                Box(modifier = Modifier.size(150.dp), contentAlignment = Alignment.Center) {
-                    Canvas(modifier = Modifier.fillMaxSize()) {
-                        val total = data.values.sum()
-                        var startAngle = -90f
-                        data.values.forEachIndexed { index, value ->
-                            val sweepAngle = (value / total) * 360f
-                            drawArc(
-                                color = colors[index % colors.size],
-                                startAngle = startAngle,
-                                sweepAngle = sweepAngle,
-                                useCenter = false,
-                                style = Stroke(width = 35f, cap = StrokeCap.Butt)
-                            )
-                            startAngle += sweepAngle
-                        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Box(
+                modifier = Modifier.size(120.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val total = data.values.sum()
+                    var startAngle = -90f
+                    data.values.forEachIndexed { index, value ->
+                        val sweepAngle = (value / total) * 360f
+                        drawArc(
+                            color = colors[index % colors.size],
+                            startAngle = startAngle,
+                            sweepAngle = sweepAngle,
+                            useCenter = false,
+                            style = Stroke(width = 25f, cap = StrokeCap.Butt)
+                        )
+                        startAngle += sweepAngle
                     }
                 }
+            }
 
-                Spacer(Modifier.width(24.dp))
+            Spacer(Modifier.width(24.dp))
 
-                // Leyenda
-                Column {
-                    data.keys.forEachIndexed { index, label ->
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
-                            Box(
-                                modifier = Modifier
-                                    .size(12.dp)
-                                    .background(colors[index % colors.size])
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text("$label: ${data[label]}%", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                        }
+            Column {
+                data.keys.forEachIndexed { index, label ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(12.dp)
+                                .background(colors[index % colors.size])
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "$label: ${data[label]}%",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                 }
             }
@@ -211,12 +242,12 @@ fun FrequencyChart(historico: InsightHistoricoDto, selectedSla: String) {
     var monthLabels by remember { mutableStateOf<List<String>>(emptyList()) }
 
     LaunchedEffect(historico, selectedSla) {
-        val monthData = mutableMapOf<String, Double>()
+        val monthData = mutableMapOf<String, Int>()
         val cal = Calendar.getInstance()
         val monthKeyFormat = SimpleDateFormat("yyyy-MM", Locale.US)
         for (i in 0 until 12) {
-            monthData[monthKeyFormat.format(cal.time)] = 0.0
             cal.add(Calendar.MONTH, -1)
+            monthData[monthKeyFormat.format(cal.time)] = 0
         }
 
         historico.historico.forEach { item ->
@@ -236,7 +267,7 @@ fun FrequencyChart(historico: InsightHistoricoDto, selectedSla: String) {
             date?.let {
                 val key = monthKeyFormat.format(it)
                 if (monthData.containsKey(key)) {
-                    monthData[key] = item.porcentaje
+                    monthData[key] = (monthData[key] ?: 0) + 1
                 }
             }
         }
@@ -248,14 +279,14 @@ fun FrequencyChart(historico: InsightHistoricoDto, selectedSla: String) {
         val keyParser = SimpleDateFormat("yyyy-MM", Locale.US)
 
         sortedKeys.forEachIndexed { index, key ->
-            entries.add(entryOf(index.toFloat(), monthData[key] ?: 0.0))
+            entries.add(entryOf(index.toFloat(), monthData[key] ?: 0))
             keyParser.parse(key)?.let {
                 labels.add(labelFormat.format(it))
             } ?: labels.add("")
         }
 
         chartEntryModelProducer.setEntries(entries)
-        monthLabels = labels
+        monthLabels = labels.reversed() // Reverse to show oldest month first
     }
 
     val bottomAxisValueFormatter = AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
@@ -272,22 +303,38 @@ fun FrequencyChart(historico: InsightHistoricoDto, selectedSla: String) {
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SlaSelector(
     selected: String,
-    onSelect: (String) -> Unit
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-        OutlinedButton(
-            onClick = { expanded = true },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("SLA Seleccionado: $selected")
-        }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            value = "SLA Seleccionado: $selected",
+            onValueChange = {},
+            readOnly = true,
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(),
+            shape = RoundedCornerShape(10.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF0A3D91),
+                unfocusedBorderColor = Color.Gray
+            )
+        )
 
-        DropdownMenu(
+        ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
