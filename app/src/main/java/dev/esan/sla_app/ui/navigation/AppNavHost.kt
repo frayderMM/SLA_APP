@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,6 +24,9 @@ import dev.esan.sla_app.data.remote.RetrofitClient
 import dev.esan.sla_app.di.AppContainer
 import dev.esan.sla_app.di.DefaultAppContainer
 import dev.esan.sla_app.ui.alertas.*
+import dev.esan.sla_app.ui.assistant.AssistantScreen
+import dev.esan.sla_app.ui.assistant.AssistantViewModel
+import dev.esan.sla_app.ui.assistant.AssistantViewModelFactory
 import dev.esan.sla_app.ui.dashboard.*
 import dev.esan.sla_app.ui.insight.InsightPanelViewModel
 import dev.esan.sla_app.ui.insight.InsightPanelViewModelFactory
@@ -112,6 +116,29 @@ fun AppNavHost(
             )
         }
 
+        composable(Routes.ASSISTANT) {
+            val dataStore = appContainer.dataStoreManager
+            val userState = dataStore.getAuthenticatedUserFlow().collectAsState(initial = null)
+            val userId = userState.value?.id?.toIntOrNull() ?: 0
+
+            val context = LocalContext.current  // ✅ SE AGREGA CONTEXTO
+
+            if (userId != 0) {
+                val assistantViewModel: AssistantViewModel = viewModel(
+                    factory = AssistantViewModelFactory(
+                        appContainer.assistantRepository,
+                        userId,
+                        context   // ✅ ESTE PARÁMETRO ERA OBLIGATORIO
+                    )
+                )
+
+                MainScreen(navController = navController) {
+                    AssistantScreen(viewModel = assistantViewModel)
+                }
+            }
+        }
+
+
         composable(Routes.PROFILE) {
             val profileVM: ProfileViewModel = viewModel(
                 factory = ProfileViewModelFactory(
@@ -197,7 +224,8 @@ private fun NavGraphBuilder.solicitudesGraph(navController: NavHostController, a
                 viewModel = solicitudesVM,
                 onCrear = { navController.navigate(Routes.SOLICITUD_CREAR) },
                 onEditar = { id -> navController.navigate(Routes.SOLICITUD_EDITAR.replace("{id}", id.toString())) },
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onAddFromExcel = { navController.navigate(Routes.SOLICITUD_IMPORT) } // ✅ NAVEGACIÓN CONECTADA
             )
         }
         composable(Routes.SOLICITUD_CREAR) { backStackEntry ->
@@ -217,6 +245,10 @@ private fun NavGraphBuilder.solicitudesGraph(navController: NavHostController, a
             if (id != null) {
                 EditarSolicitudScreen(id = id, viewModel = solicitudesVM, onBack = { navController.popBackStack() })
             }
+        }
+        // ✅ DESTINO AÑADIDO PARA LA PANTALLA DE IMPORTACIÓN
+        composable(Routes.SOLICITUD_IMPORT) {
+            ImportSolicitudesScreen(onBack = { navController.popBackStack() })
         }
     }
 }

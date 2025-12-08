@@ -8,7 +8,6 @@ object Routes {
     const val REGRESSION = "regression"
     const val INDICADORES = "indicadores"
     const val ALERTAS = "alertas"
-    const val PDF = "pdf"
     const val PROFILE = "profile"
     const val SECURITY = "security"
     const val SETTINGS = "settings"
@@ -19,5 +18,8 @@ object Routes {
     const val SOLICITUDES_LIST = "solicitudes_list"
     const val SOLICITUD_CREAR = "solicitudes_crear"
     const val SOLICITUD_EDITAR = "solicitudes_editar/{id}"
+    const val SOLICITUD_IMPORT = "solicitud_import" // <-- RUTA AÑADIDA
+
     const val EMAIL_CONFIG = "email_config"
+    const val ASSISTANT = "assistant"
 }

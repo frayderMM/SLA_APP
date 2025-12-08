@@ -26,7 +26,8 @@ fun SolicitudesScreen(
     viewModel: SolicitudesViewModel,
     onCrear: () -> Unit,
     onEditar: (Int) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onAddFromExcel: () -> Unit
 ) {
     val listState by viewModel.listState.collectAsState()
     val formState by viewModel.formState.collectAsState()
@@ -51,8 +52,17 @@ fun SolicitudesScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onCrear) {
-                Icon(Icons.Default.Add, contentDescription = "Crear Solicitud")
+            Column(horizontalAlignment = Alignment.End) {
+                FloatingActionButton(
+                    onClick = onAddFromExcel,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                ) {
+                    Icon(Icons.Default.FileUpload, contentDescription = "Añadir desde Excel")
+                }
+                FloatingActionButton(onClick = onCrear) {
+                    Icon(Icons.Default.Add, contentDescription = "Crear Solicitud")
+                }
             }
         }
     ) { padding ->
@@ -67,7 +77,6 @@ fun SolicitudesScreen(
                 else -> {
                     val slaOptions = listOf("Todos") + formState.tiposSla.map { it.nombre }.sorted()
                     
-                    // --- SECCIÓN DE FILTROS --- 
                     Column(modifier = Modifier.padding(vertical = 8.dp)) {
                         FilterChipGroup(
                             items = slaOptions,
@@ -131,7 +140,6 @@ private fun DateRangeFilter(
             dismissButton = { 
                 TextButton(onClick = { 
                     showDialog = false 
-                    // Limpiar filtro
                     dateRangePickerState.setSelection(null, null)
                     onDateRangeSelected(null, null)
                 }) { Text("Limpiar") }
@@ -176,7 +184,9 @@ private fun FilterChipGroup(items: List<String>, selectedItem: String, onSelecte
 
 @Composable
 fun SolicitudCard(solicitud: Solicitud, onEditar: () -> Unit, onEliminar: () -> Unit) {
-    fun formatDate(dateString: String): String {
+    // ✅ FUNCIÓN MODIFICADA PARA ACEPTAR NULOS
+    fun formatDate(dateString: String?): String {
+        if (dateString == null) return "N/A"
         return try {
             OffsetDateTime.parse(dateString).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
         } catch (e: Exception) {
@@ -202,6 +212,7 @@ fun SolicitudCard(solicitud: Solicitud, onEditar: () -> Unit, onEliminar: () -> 
                     text = solicitud.tipoSlaNombre ?: "Sin tipo de SLA",
                     style = MaterialTheme.typography.bodyMedium,
                 )
+                // ✅ LLAMADA A LA FUNCIÓN MODIFICADA (AHORA ES SEGURO)
                 Text(
                     text = "Solicitud: ${formatDate(solicitud.fechaSolicitud)}  •  Ingreso: ${formatDate(solicitud.fechaIngreso)}",
                     style = MaterialTheme.typography.bodySmall,

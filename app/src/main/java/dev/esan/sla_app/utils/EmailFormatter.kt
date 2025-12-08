@@ -4,7 +4,7 @@ import dev.esan.sla_app.data.remote.dto.alertas.AlertaDto
 
 object EmailFormatter {
 
-    fun generateHtmlReport(alertas: List<AlertaDto>): String {
+    fun generateHtmlReport(alertas: List<AlertaDto>, customMessage: String? = null): String {
         val rows = alertas.joinToString(separator = "") { alerta ->
             """
             <tr>
@@ -16,10 +16,15 @@ object EmailFormatter {
             """.trimIndent()
         }
 
+        val messageHtml = if (!customMessage.isNullOrBlank()) {
+            """<p style="background-color: #e8f5e9; padding: 10px; border-left: 4px solid #4caf50; margin-bottom: 20px;">$customMessage</p>"""
+        } else ""
+
         return """
             <html>
             <body style="font-family: Arial, sans-serif;">
                 <h2>Reporte de Alertas SLA</h2>
+                $messageHtml
                 <p>A continuación se detallan las alertas registradas en el sistema:</p>
                 <table style="width: 100%; border-collapse: collapse;">
                     <thead>

@@ -57,9 +57,10 @@ private fun EditForm(
 ) {
     val formState by viewModel.formState.collectAsState()
 
+    // ✅ CORRECCIÓN: Se manejan las fechas nulas usando el operador Elvis (`?: ""`)
     var rol by remember { mutableStateOf(solicitud.rol) }
-    var fechaSolicitud by remember { mutableStateOf(solicitud.fechaSolicitud) }
-    var fechaIngreso by remember { mutableStateOf(solicitud.fechaIngreso) }
+    var fechaSolicitud by remember { mutableStateOf(solicitud.fechaSolicitud ?: "") }
+    var fechaIngreso by remember { mutableStateOf(solicitud.fechaIngreso ?: "") }
     var selectedSlaId by remember { mutableStateOf(solicitud.tipoSlaId) }
 
     Column(

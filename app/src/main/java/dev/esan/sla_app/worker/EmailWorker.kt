@@ -15,6 +15,8 @@ class EmailWorker(
 
     override suspend fun doWork(): Result {
         val toEmail = inputData.getString("TO_EMAIL") ?: return Result.failure()
+        val subject = inputData.getString("SUBJECT") ?: "Reporte SLA (Programado)"
+        val customMessage = inputData.getString("MESSAGE")
 
         return try {
             // Manually create dependencies since WorkerFactory is not set up
@@ -22,13 +24,13 @@ class EmailWorker(
             val alertasApi = retrofit.create(dev.esan.sla_app.data.remote.api.AlertasApi::class.java)
             val alertas = alertasApi.getAlertas()
             
-            val htmlContent = dev.esan.sla_app.utils.EmailFormatter.generateHtmlReport(alertas)
+            val htmlContent = dev.esan.sla_app.utils.EmailFormatter.generateHtmlReport(alertas, customMessage)
 
             val api = ResendClient.instance.create(ResendApi::class.java)
             val request = ResendEmailRequest(
                 from = Constants.RESEND_FROM_EMAIL,
                 to = listOf(toEmail),
-                subject = "Reporte SLA (Programado)",
+                subject = subject,
                 html = htmlContent
             )
 
