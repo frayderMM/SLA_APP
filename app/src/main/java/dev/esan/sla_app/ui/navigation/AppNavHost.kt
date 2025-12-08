@@ -1,3 +1,4 @@
+
 package dev.esan.sla_app.ui.navigation
 
 import androidx.compose.foundation.layout.Box
@@ -18,6 +19,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
+import dev.esan.sla_app.data.preferences.UserPreferences
 import dev.esan.sla_app.data.remote.RetrofitClient
 import dev.esan.sla_app.di.AppContainer
 import dev.esan.sla_app.di.DefaultAppContainer
@@ -34,12 +36,16 @@ import dev.esan.sla_app.ui.pdf.PdfViewModelFactory
 import dev.esan.sla_app.ui.profile.*
 import dev.esan.sla_app.ui.regression.RegressionScreen
 import dev.esan.sla_app.ui.security.SecurityScreen
+import dev.esan.sla_app.ui.settings.SettingsScreen
+import dev.esan.sla_app.ui.settings.SettingsViewModel
+import dev.esan.sla_app.ui.settings.SettingsViewModelFactory
 import dev.esan.sla_app.ui.sla.*
 import dev.esan.sla_app.ui.solicitudes.*
 
 @Composable
 fun AppNavHost(
-    navController: NavHostController
+    navController: NavHostController,
+    userPreferences: UserPreferences
 ) {
     val context = LocalContext.current
     val appContainer: AppContainer = remember(context) {
@@ -149,7 +155,8 @@ fun AppNavHost(
                             popUpTo(navController.graph.findStartDestination().id) { inclusive = true }
                         }
                     },
-                    onNavigateToSecurity = { navController.navigate(Routes.SECURITY) }
+                    onNavigateToSecurity = { navController.navigate(Routes.SECURITY) },
+                    onNavigateToSettings = { navController.navigate(Routes.SETTINGS) }
                 )
             }
         }
@@ -165,6 +172,13 @@ fun AppNavHost(
                 viewModel = profileVM,
                 onBack = { navController.popBackStack() }
             )
+        }
+
+        composable(Routes.SETTINGS) {
+            val settingsVM: SettingsViewModel = viewModel(
+                factory = SettingsViewModelFactory(userPreferences)
+            )
+            SettingsScreen(viewModel = settingsVM)
         }
     }
 }
