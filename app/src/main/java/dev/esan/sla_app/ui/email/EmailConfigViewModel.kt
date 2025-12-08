@@ -12,6 +12,8 @@ import kotlinx.coroutines.launch
 
 data class EmailConfigState(
     val email: String = "",
+    val subject: String = "",
+    val customMessage: String = "",
     val intervalHours: Long = 24,
     val isScheduled: Boolean = false,
     val scheduleMode: ScheduleMode = ScheduleMode.INTERVAL,
@@ -36,6 +38,14 @@ class EmailConfigViewModel(
         _state.update { it.copy(email = email) }
     }
 
+    fun onSubjectChange(subject: String) {
+        _state.update { it.copy(subject = subject) }
+    }
+
+    fun onCustomMessageChange(message: String) {
+        _state.update { it.copy(customMessage = message) }
+    }
+
     fun onIntervalChange(hours: Long) {
         _state.update { it.copy(intervalHours = hours) }
     }
@@ -57,14 +67,24 @@ class EmailConfigViewModel(
         if (_state.value.isScheduled) {
             if (_state.value.email.isNotBlank()) {
                 if (_state.value.scheduleMode == ScheduleMode.INTERVAL) {
-                    repository.scheduleEmailReport(_state.value.intervalHours, _state.value.email)
+                    repository.scheduleEmailReport(
+                        _state.value.intervalHours, 
+                        _state.value.email,
+                        _state.value.subject,
+                        _state.value.customMessage
+                    )
                     _state.update { it.copy(message = "Reporte programado cada ${_state.value.intervalHours} horas") }
                 } else {
                     val h = _state.value.dailyHour.toIntOrNull()
                     val m = _state.value.dailyMinute.toIntOrNull()
 
                     if (h != null && m != null && h in 0..23 && m in 0..59) {
-                        repository.scheduleDailyReport(h, m, _state.value.email)
+                        repository.scheduleDailyReport(
+                            h, m, 
+                            _state.value.email,
+                            _state.value.subject,
+                            _state.value.customMessage
+                        )
                         val timeStr = String.format("%02d:%02d", h, m)
                         _state.update { it.copy(message = "Reporte programado diariamente a las $timeStr") }
                     } else {
@@ -89,7 +109,11 @@ class EmailConfigViewModel(
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, message = null) }
-            val result = repository.sendEmailNow(email)
+            val result = repository.sendEmailNow(
+                email, 
+                _state.value.subject, 
+                _state.value.customMessage
+            )
             _state.update { it.copy(isLoading = false) }
             
             result.onSuccess {
