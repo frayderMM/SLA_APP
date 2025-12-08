@@ -6,10 +6,10 @@ package dev.esan.sla_app.data.model
 data class Solicitud(
     val id: Int,
     val rol: String,
-    val fechaSolicitud: String, // Se mantiene como String para simplicidad
-    val fechaIngreso: String,
+    val fechaSolicitud: String?, // ✅ HECHO NULABLE
+    val fechaIngreso: String?,   // ✅ HECHO NULABLE
     val tipoSlaId: Int,
-    val tipoSlaNombre: String? // La API podría devolver datos adicionales
+    val tipoSlaNombre: String? // Este ya era nulable, lo que es correcto
 )
 
 /**
