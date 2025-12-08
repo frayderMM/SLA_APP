@@ -15,6 +15,8 @@ interface AppContainer {
     val reportesRepository: ReportesRepository
     val profileRepository: ProfileRepository
     val emailRepository: EmailRepository
+    val assistantApi: AssistantApi
+    val assistantRepository: AssistantRepository // <-- ✅ AÑADIDO
     val dataStoreManager: DataStoreManager
 }
 
@@ -31,12 +33,12 @@ class DefaultAppContainer(context: Context) : AppContainer {
     private val tiposSlaApi: TiposSlaApi by lazy { retrofit.create(TiposSlaApi::class.java) }
     private val reportesApi: ReportesApi by lazy { retrofit.create(ReportesApi::class.java) }
     private val profileApi: ProfileApi by lazy { retrofit.create(ProfileApi::class.java) }
+    override val assistantApi: AssistantApi by lazy { retrofit.create(AssistantApi::class.java) }
 
     // Repositories
     override val authRepository: AuthRepository by lazy { AuthRepository(authApi) }
     override val insightRepository: InsightRepository by lazy { InsightRepository(dashboardApi) }
 
-    // 🔥 CORREGIDO: SlaRepository ahora recibe ambas dependencias
     override val slaRepository: SlaRepository by lazy {
         SlaRepository(slaApi, tiposSlaApi)
     }
@@ -48,6 +50,7 @@ class DefaultAppContainer(context: Context) : AppContainer {
     override val reportesRepository: ReportesRepository by lazy { ReportesRepository(reportesApi) }
     override val profileRepository: ProfileRepository by lazy { ProfileRepository(profileApi) }
     override val emailRepository: EmailRepository by lazy { EmailRepository(context, alertasRepository) }
+    override val assistantRepository: AssistantRepository by lazy { AssistantRepository(assistantApi) } // <-- ✅ AÑADIDO
 
     override val dataStoreManager: DataStoreManager by lazy {
         DataStoreManager(context.applicationContext)
