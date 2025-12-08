@@ -1,3 +1,4 @@
+
 package dev.esan.sla_app.ui.navigation
 
 object Routes {
@@ -9,7 +10,8 @@ object Routes {
     const val ALERTAS = "alertas"
     const val PDF = "pdf"
     const val PROFILE = "profile"
-    const val SECURITY = "security" // <-- RUTA AÑADIDA
+    const val SECURITY = "security"
+    const val SETTINGS = "settings"
 
     const val DASHBOARD_GRAPH = "dashboard_graph"
 
