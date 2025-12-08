@@ -166,12 +166,20 @@ fun IndicadoresScreen(
                         Spacer(Modifier.height(16.dp))
 
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Box(modifier = Modifier.weight(1f)) {
-                                DropdownFiltro("Tipo SLA", slaSeleccionado, itemsSla) { slaSeleccionado = it }
-                            }
-                            Box(modifier = Modifier.weight(1f)) {
-                                DropdownFiltro("Estado", estadoSeleccionado, opcionesEstado) { estadoSeleccionado = it }
-                            }
+                            DropdownFiltro(
+                                label = "Tipo SLA",
+                                seleccion = slaSeleccionado,
+                                opciones = itemsSla,
+                                onSelected = { slaSeleccionado = it },
+                                modifier = Modifier.weight(1f)
+                            )
+                            DropdownFiltro(
+                                label = "Estado",
+                                seleccion = estadoSeleccionado,
+                                opciones = opcionesEstado,
+                                onSelected = { estadoSeleccionado = it },
+                                modifier = Modifier.weight(1f)
+                            )
                         }
 
                         Spacer(Modifier.height(18.dp))
@@ -267,19 +275,45 @@ fun BadgeEstado(text: String, background: Color) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DropdownFiltro(label: String, seleccion: String, opciones: List<String>, onSelected: (String) -> Unit) {
+fun DropdownFiltro(
+    label: String,
+    seleccion: String,
+    opciones: List<String>,
+    onSelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
     var expanded by remember { mutableStateOf(false) }
-    Column {
-        OutlinedButton(modifier = Modifier.fillMaxWidth(), onClick = { expanded = true }) {
-            Text("$label: $seleccion", fontWeight = FontWeight.SemiBold)
-        }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            value = seleccion,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            },
+            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+            modifier = Modifier.menuAnchor()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
             opciones.forEach { opcion ->
-                DropdownMenuItem(text = { Text(opcion) }, onClick = {
-                    onSelected(opcion)
-                    expanded = false
-                })
+                DropdownMenuItem(
+                    text = { Text(opcion) },
+                    onClick = {
+                        onSelected(opcion)
+                        expanded = false
+                    }
+                )
             }
         }
     }
