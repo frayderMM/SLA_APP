@@ -74,16 +74,46 @@ fun EmailConfigScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Email, contentDescription = null, tint = Color(0xFF0A3D91))
                         Spacer(Modifier.width(8.dp))
-                        Text("Destinatario", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF2C3A2F))
+                        Text("Detalles del Reporte", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF2C3A2F))
                     }
                     Spacer(Modifier.height(16.dp))
+                    
                     OutlinedTextField(
                         value = state.email,
                         onValueChange = viewModel::onEmailChange,
-                        label = { Text("Correo electrónico") },
+                        label = { Text("Destinatario") },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF0A3D91),
+                            focusedLabelColor = Color(0xFF0A3D91)
+                        )
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+
+                    OutlinedTextField(
+                        value = state.subject,
+                        onValueChange = viewModel::onSubjectChange,
+                        label = { Text("Asunto (Opcional)") },
+                        placeholder = { Text("Reporte SLA") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF0A3D91),
+                            focusedLabelColor = Color(0xFF0A3D91)
+                        )
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+
+                    OutlinedTextField(
+                        value = state.customMessage,
+                        onValueChange = viewModel::onCustomMessageChange,
+                        label = { Text("Mensaje (Opcional)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color(0xFF0A3D91),
                             focusedLabelColor = Color(0xFF0A3D91)
@@ -190,9 +220,6 @@ fun EmailConfigScreen(
                                     value = state.dailyHour,
                                     onValueChange = { 
                                         viewModel.onDailyTimeChange(it, state.dailyMinute)
-                                        // Optional: Apply schedule only if valid, or wait for user action? 
-                                        // For now, let's try to apply if valid to give immediate feedback, or just let the user toggle off/on.
-                                        // Better: Apply schedule if valid.
                                         if (it.toIntOrNull() != null) viewModel.applySchedule()
                                     },
                                     label = { Text("Hora") },

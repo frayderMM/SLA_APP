@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -90,12 +91,78 @@ fun AlertasScreen(
                 }
 
                 else -> {
-                    LazyColumn(
-                        contentPadding = PaddingValues(16.dp)
-                    ) {
-                        items(state.data.size) { i ->
-                            AlertaCard(alerta = state.data[i])
-                            Spacer(modifier = Modifier.height(14.dp))
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        // Filter Row (Severity)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            listOf("High", "Medium", "Low").forEach { severity ->
+                                val isSelected = state.filterSeverity == severity
+                                FilterChip(
+                                    selected = isSelected,
+                                    onClick = { viewModel.setFilter(severity) },
+                                    label = { Text(severity) },
+                                    leadingIcon = if (isSelected) {
+                                        { Icon(Icons.Default.Check, contentDescription = null) }
+                                    } else null,
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = when(severity) {
+                                            "High" -> Color(0xFFDA2E2E)
+                                            "Medium" -> Color(0xFF1E9A74)
+                                            else -> Color(0xFF4CAF50)
+                                        },
+                                        selectedLabelColor = Color.White
+                                    )
+                                )
+                            }
+                        }
+
+                        // Filter Row (Roles)
+                        if (state.availableRoles.isNotEmpty()) {
+                            androidx.compose.foundation.lazy.LazyRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(state.availableRoles.size) { i ->
+                                    val role = state.availableRoles[i]
+                                    val isSelected = state.filterRole == role
+                                    FilterChip(
+                                        selected = isSelected,
+                                        onClick = { viewModel.setRoleFilter(role) },
+                                        label = { Text(role) },
+                                        leadingIcon = if (isSelected) {
+                                            { Icon(Icons.Default.Check, contentDescription = null) }
+                                        } else null,
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = Color(0xFF0A3D91),
+                                            selectedLabelColor = Color.White
+                                        )
+                                    )
+                                }
+                            }
+                        }
+
+                        if (state.filteredData.isEmpty()) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = "No hay alertas con este filtro",
+                                    color = Color(0xFF6C757D)
+                                )
+                            }
+                        } else {
+                            LazyColumn(
+                                contentPadding = PaddingValues(16.dp)
+                            ) {
+                                items(state.filteredData.size) { i ->
+                                    AlertaCard(alerta = state.filteredData[i])
+                                    Spacer(modifier = Modifier.height(14.dp))
+                                }
+                            }
                         }
                     }
                 }

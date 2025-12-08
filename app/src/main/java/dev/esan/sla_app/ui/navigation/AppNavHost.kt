@@ -1,9 +1,11 @@
+
 package dev.esan.sla_app.ui.navigation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,10 +19,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
+import dev.esan.sla_app.data.preferences.UserPreferences
 import dev.esan.sla_app.data.remote.RetrofitClient
 import dev.esan.sla_app.di.AppContainer
 import dev.esan.sla_app.di.DefaultAppContainer
 import dev.esan.sla_app.ui.alertas.*
+import dev.esan.sla_app.ui.assistant.AssistantScreen
+import dev.esan.sla_app.ui.assistant.AssistantViewModel
+import dev.esan.sla_app.ui.assistant.AssistantViewModelFactory
 import dev.esan.sla_app.ui.dashboard.*
 import dev.esan.sla_app.ui.insight.InsightPanelViewModel
 import dev.esan.sla_app.ui.insight.InsightPanelViewModelFactory
@@ -29,13 +35,17 @@ import dev.esan.sla_app.ui.pdf.PdfViewModel
 import dev.esan.sla_app.ui.pdf.PdfViewModelFactory
 import dev.esan.sla_app.ui.profile.*
 import dev.esan.sla_app.ui.regression.RegressionScreen
-import dev.esan.sla_app.ui.security.SecurityScreen // <-- IMPORTAR LA NUEVA PANTALLA
+import dev.esan.sla_app.ui.security.SecurityScreen
+import dev.esan.sla_app.ui.settings.SettingsScreen
+import dev.esan.sla_app.ui.settings.SettingsViewModel
+import dev.esan.sla_app.ui.settings.SettingsViewModelFactory
 import dev.esan.sla_app.ui.sla.*
 import dev.esan.sla_app.ui.solicitudes.*
 
 @Composable
 fun AppNavHost(
-    navController: NavHostController
+    navController: NavHostController,
+    userPreferences: UserPreferences
 ) {
     val context = LocalContext.current
     val appContainer: AppContainer = remember(context) {
@@ -106,6 +116,29 @@ fun AppNavHost(
             )
         }
 
+        composable(Routes.ASSISTANT) {
+            val dataStore = appContainer.dataStoreManager
+            val userState = dataStore.getAuthenticatedUserFlow().collectAsState(initial = null)
+            val userId = userState.value?.id?.toIntOrNull() ?: 0
+
+            val context = LocalContext.current  // ✅ SE AGREGA CONTEXTO
+
+            if (userId != 0) {
+                val assistantViewModel: AssistantViewModel = viewModel(
+                    factory = AssistantViewModelFactory(
+                        appContainer.assistantRepository,
+                        userId,
+                        context   // ✅ ESTE PARÁMETRO ERA OBLIGATORIO
+                    )
+                )
+
+                MainScreen(navController = navController) {
+                    AssistantScreen(viewModel = assistantViewModel)
+                }
+            }
+        }
+
+
         composable(Routes.PROFILE) {
             val profileVM: ProfileViewModel = viewModel(
                 factory = ProfileViewModelFactory(
@@ -122,13 +155,12 @@ fun AppNavHost(
                             popUpTo(navController.graph.findStartDestination().id) { inclusive = true }
                         }
                     },
-                    // --- CONECTAR LA NAVEGACIÓN ---
-                    onNavigateToSecurity = { navController.navigate(Routes.SECURITY) }
+                    onNavigateToSecurity = { navController.navigate(Routes.SECURITY) },
+                    onNavigateToSettings = { navController.navigate(Routes.SETTINGS) }
                 )
             }
         }
 
-        // --- AÑADIR LA NUEVA PANTALLA AL GRAFO ---
         composable(Routes.SECURITY) {
             val profileVM: ProfileViewModel = viewModel(
                 factory = ProfileViewModelFactory(
@@ -141,10 +173,15 @@ fun AppNavHost(
                 onBack = { navController.popBackStack() }
             )
         }
+
+        composable(Routes.SETTINGS) {
+            val settingsVM: SettingsViewModel = viewModel(
+                factory = SettingsViewModelFactory(userPreferences)
+            )
+            SettingsScreen(viewModel = settingsVM)
+        }
     }
 }
-
-// ... (El resto del archivo se mantiene igual)
 
 private fun NavGraphBuilder.dashboardGraph(navController: NavHostController, appContainer: AppContainer) {
     navigation(startDestination = Routes.DASHBOARD, route = Routes.DASHBOARD_GRAPH) {
@@ -187,7 +224,8 @@ private fun NavGraphBuilder.solicitudesGraph(navController: NavHostController, a
                 viewModel = solicitudesVM,
                 onCrear = { navController.navigate(Routes.SOLICITUD_CREAR) },
                 onEditar = { id -> navController.navigate(Routes.SOLICITUD_EDITAR.replace("{id}", id.toString())) },
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onAddFromExcel = { navController.navigate(Routes.SOLICITUD_IMPORT) } // ✅ NAVEGACIÓN CONECTADA
             )
         }
         composable(Routes.SOLICITUD_CREAR) { backStackEntry ->
@@ -207,6 +245,10 @@ private fun NavGraphBuilder.solicitudesGraph(navController: NavHostController, a
             if (id != null) {
                 EditarSolicitudScreen(id = id, viewModel = solicitudesVM, onBack = { navController.popBackStack() })
             }
+        }
+        // ✅ DESTINO AÑADIDO PARA LA PANTALLA DE IMPORTACIÓN
+        composable(Routes.SOLICITUD_IMPORT) {
+            ImportSolicitudesScreen(onBack = { navController.popBackStack() })
         }
     }
 }

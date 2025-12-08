@@ -5,6 +5,7 @@ import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.SmartToy // <-- IMPORT AÑADIDO
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -25,22 +26,16 @@ sealed class BottomNavItem(
         icon = Icons.Default.Assessment
     )
 
-    object Alertas : BottomNavItem(
-        route = Routes.ALERTAS,
-        title = "Alertas",
-        icon = Icons.Default.Warning
-    )
-
-    // Nuevo item para el PDF
-    object Pdf : BottomNavItem(
-        route = Routes.PDF,
-        title = "Reportes",
-        icon = Icons.Default.PictureAsPdf
-    )
-
     object Profile : BottomNavItem(
         route = Routes.PROFILE,
         title = "Perfil",
         icon = Icons.Default.Person
+    )
+
+    // CORREGIDO: Se usa un icono más apropiado para el asistente
+    object Assistant : BottomNavItem(
+        route = Routes.ASSISTANT,
+        title = "Assistant",
+        icon = Icons.Default.SmartToy 
     )
 }

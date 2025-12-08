@@ -19,15 +19,15 @@ class EmailRepository(
     private val api: ResendApi = ResendClient.instance.create(ResendApi::class.java)
 
     // Send email immediately
-    suspend fun sendEmailNow(toEmail: String): Result<String> {
+    suspend fun sendEmailNow(toEmail: String, subject: String, message: String?): Result<String> {
         return try {
             val alertas = alertasRepository.cargarAlertas()
-            val htmlContent = dev.esan.sla_app.utils.EmailFormatter.generateHtmlReport(alertas)
+            val htmlContent = dev.esan.sla_app.utils.EmailFormatter.generateHtmlReport(alertas, message)
 
             val request = ResendEmailRequest(
                 from = Constants.RESEND_FROM_EMAIL,
                 to = listOf(toEmail),
-                subject = "Reporte SLA (Manual)",
+                subject = subject.ifBlank { "Reporte SLA (Manual)" },
                 html = htmlContent
             )
             val response = api.sendEmail(request)
@@ -42,8 +42,12 @@ class EmailRepository(
     }
 
     // Schedule email
-    fun scheduleEmailReport(intervalHours: Long, toEmail: String) {
-        val data = workDataOf("TO_EMAIL" to toEmail)
+    fun scheduleEmailReport(intervalHours: Long, toEmail: String, subject: String, message: String?) {
+        val data = workDataOf(
+            "TO_EMAIL" to toEmail,
+            "SUBJECT" to subject.ifBlank { "Reporte SLA (Programado)" },
+            "MESSAGE" to message
+        )
 
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -62,8 +66,12 @@ class EmailRepository(
         )
     }
 
-    fun scheduleDailyReport(hour: Int, minute: Int, toEmail: String) {
-        val data = workDataOf("TO_EMAIL" to toEmail)
+    fun scheduleDailyReport(hour: Int, minute: Int, toEmail: String, subject: String, message: String?) {
+        val data = workDataOf(
+            "TO_EMAIL" to toEmail,
+            "SUBJECT" to subject.ifBlank { "Reporte SLA (Diario)" },
+            "MESSAGE" to message
+        )
 
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)

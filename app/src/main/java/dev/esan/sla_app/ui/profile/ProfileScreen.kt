@@ -27,12 +27,12 @@ import kotlinx.coroutines.flow.collectLatest
 fun ProfileScreen(
     viewModel: ProfileViewModel,
     onLogout: () -> Unit,
-    onNavigateToSecurity: () -> Unit, // <-- AÑADIDO PARA NAVEGAR
+    onNavigateToSecurity: () -> Unit,
+    onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
 
-    // Este LaunchedEffect puede quedar para mostrar Toasts o Snackbars de éxito/error
     LaunchedEffect(Unit) {
         viewModel.changePasswordResult.collectLatest {
             it.fold(
@@ -71,8 +71,10 @@ fun ProfileScreen(
             rol = currentUser.role
         )
         Spacer(modifier = Modifier.height(26.dp))
-        // --- AHORA NAVEGA A LA NUEVA PANTALLA ---
-        CardMenuOcean(onSecurityClick = onNavigateToSecurity)
+        CardMenuOcean(
+            onSecurityClick = onNavigateToSecurity,
+            onSettingsClick = onNavigateToSettings
+        )
         Spacer(modifier = Modifier.height(30.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
             LogoutButtonOcean(onClick = { viewModel.onLogoutClicked() })
@@ -80,8 +82,6 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(40.dp))
     }
 }
-
-// ... (El resto de los componentes de ProfileScreen se mantienen igual)
 
 @Composable
 fun ProfileHeaderOcean(name: String) {
@@ -134,12 +134,12 @@ fun InfoRowOcean(icon: Int, label: String, value: String) {
 }
 
 @Composable
-fun CardMenuOcean(onSecurityClick: () -> Unit) {
+fun CardMenuOcean(onSecurityClick: () -> Unit, onSettingsClick: () -> Unit) {
     Card(modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth(), colors = CardDefaults.cardColors(Color(0xFFEBF9FF)), elevation = CardDefaults.cardElevation(8.dp), shape = RoundedCornerShape(22.dp)) {
         Column(modifier = Modifier.padding(6.dp)) {
             MenuItemOcean(R.drawable.ic_notifications, "Notificaciones", onClick = {})
             Divider()
-            MenuItemOcean(R.drawable.ic_settings, "Configuración", onClick = {})
+            MenuItemOcean(R.drawable.ic_settings, "Configuración", onClick = onSettingsClick)
             Divider()
             MenuItemOcean(R.drawable.ic_help, "Centro de ayuda", onClick = {})
             Divider()

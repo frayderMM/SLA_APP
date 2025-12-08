@@ -92,6 +92,7 @@ private fun EditForm(
 ) {
     val formState by viewModel.formState.collectAsState()
 
+    // ✅ CORRECCIÓN: Se manejan las fechas nulas usando el operador Elvis (`?: ""`)
     var rol by remember { mutableStateOf(solicitud.rol) }
     
     // Parsear fechas del API (formato ISO 8601) a LocalDate
