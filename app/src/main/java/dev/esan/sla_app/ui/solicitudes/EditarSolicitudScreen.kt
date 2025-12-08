@@ -1,6 +1,8 @@
 package dev.esan.sla_app.ui.solicitudes
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -16,6 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.esan.sla_app.data.model.Solicitud
+import java.time.*
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,8 +93,28 @@ private fun EditForm(
     val formState by viewModel.formState.collectAsState()
 
     var rol by remember { mutableStateOf(solicitud.rol) }
-    var fechaSolicitud by remember { mutableStateOf(solicitud.fechaSolicitud) }
-    var fechaIngreso by remember { mutableStateOf(solicitud.fechaIngreso ?: "") }
+    
+    // Parsear fechas del API (formato ISO 8601) a LocalDate
+    val fechaSolicitudInicial = remember {
+        try {
+            OffsetDateTime.parse(solicitud.fechaSolicitud).toLocalDate()
+        } catch (e: Exception) {
+            LocalDate.now()
+        }
+    }
+    
+    val fechaIngresoInicial = remember {
+        solicitud.fechaIngreso?.let {
+            try {
+                OffsetDateTime.parse(it).toLocalDate()
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+    
+    var fechaSolicitud by remember { mutableStateOf(fechaSolicitudInicial) }
+    var fechaIngreso by remember { mutableStateOf<LocalDate?>(fechaIngresoInicial) }
     var selectedSlaId by remember { mutableStateOf(solicitud.tipoSlaId) }
 
     Column(
@@ -158,40 +182,17 @@ private fun EditForm(
                     color = Color(0xFF1565C0)
                 )
                 
-                OutlinedTextField(
-                    value = fechaSolicitud,
-                    onValueChange = { fechaSolicitud = it },
-                    label = { Text("Fecha Solicitud (YYYY-MM-DD)") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.CalendarToday,
-                            contentDescription = null,
-                            tint = Color(0xFF1565C0)
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF1565C0),
-                        focusedLabelColor = Color(0xFF1565C0)
-                    )
+                EditDatePicker(
+                    label = "Fecha Solicitud",
+                    selectedDate = fechaSolicitud,
+                    onDateSelected = { fechaSolicitud = it }
                 )
                 
-                OutlinedTextField(
-                    value = fechaIngreso,
-                    onValueChange = { fechaIngreso = it },
-                    label = { Text("Fecha Ingreso (YYYY-MM-DD)") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Event,
-                            contentDescription = null,
-                            tint = Color(0xFF1565C0)
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF1565C0),
-                        focusedLabelColor = Color(0xFF1565C0)
-                    )
+                EditDatePicker(
+                    label = "Fecha Ingreso (Opcional)",
+                    selectedDate = fechaIngreso,
+                    onDateSelected = { fechaIngreso = it },
+                    optional = true
                 )
             }
         }
@@ -231,8 +232,20 @@ private fun EditForm(
                 .fillMaxWidth()
                 .height(56.dp),
             onClick = {
-                val fechaIngresoFinal = if (fechaIngreso.isBlank()) null else fechaIngreso
-                viewModel.updateSolicitud(solicitud.id, rol, fechaSolicitud, fechaIngresoFinal, selectedSlaId)
+                // Convertir LocalDate a ISO 8601 con hora actual
+                val fechaSolicitudIso = LocalDateTime.of(fechaSolicitud, LocalTime.now())
+                    .atZone(ZoneId.systemDefault())
+                    .withZoneSameInstant(ZoneOffset.UTC)
+                    .format(DateTimeFormatter.ISO_INSTANT)
+                
+                val fechaIngresoIso = fechaIngreso?.let {
+                    LocalDateTime.of(it, LocalTime.now())
+                        .atZone(ZoneId.systemDefault())
+                        .withZoneSameInstant(ZoneOffset.UTC)
+                        .format(DateTimeFormatter.ISO_INSTANT)
+                }
+                
+                viewModel.updateSolicitud(solicitud.id, rol, fechaSolicitudIso, fechaIngresoIso, selectedSlaId)
             },
             enabled = !formState.isLoading,
             colors = ButtonDefaults.buttonColors(
@@ -288,6 +301,119 @@ private fun EditForm(
                     )
                 }
             }
+        }
+    }
+}
+
+/**
+ * Componente DatePicker estilizado para editar fechas.
+ * Muestra la fecha en formato dd/MM/yyyy y abre un calendario al hacer clic.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EditDatePicker(
+    label: String,
+    selectedDate: LocalDate?,
+    onDateSelected: (LocalDate) -> Unit,
+    optional: Boolean = false
+) {
+    var showDatePicker by remember { mutableStateOf(false) }
+    
+    val formattedDate = remember(selectedDate) {
+        selectedDate?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+    }
+    
+    // Superficie clickable con borde
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .clickable { showDatePicker = true },
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(
+            1.dp,
+            if (selectedDate != null) Color(0xFF1565C0) else Color(0xFFBDBDBD)
+        ),
+        color = Color.Transparent
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.CalendarToday,
+                contentDescription = null,
+                tint = Color(0xFF1565C0)
+            )
+            Spacer(Modifier.width(16.dp))
+            
+            if (formattedDate != null) {
+                Column {
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF1565C0),
+                        fontSize = 12.sp
+                    )
+                    Text(
+                        formattedDate,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            } else {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color(0xFF757575)
+                )
+            }
+            
+            // Botón de limpiar (solo si es opcional y tiene valor)
+            if (optional && selectedDate != null) {
+                Spacer(Modifier.weight(1f))
+                IconButton(
+                    onClick = { onDateSelected(LocalDate.now()) }, // Resetear a fecha actual
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = "Limpiar",
+                        tint = Color(0xFF757575),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+    }
+    
+    // DatePickerDialog
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = selectedDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
+                ?: System.currentTimeMillis()
+        )
+        
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            val newDate = Instant.ofEpochMilli(millis)
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDate()
+                            onDateSelected(newDate)
+                        }
+                        showDatePicker = false
+                    }
+                ) { Text("Aceptar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
         }
     }
 }
