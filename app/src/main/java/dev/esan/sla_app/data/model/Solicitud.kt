@@ -18,7 +18,7 @@ data class Solicitud(
 data class CreateSolicitudDto(
     val rol: String,
     val fechaSolicitud: String,
-    val fechaIngreso: String,
+    val fechaIngreso: String?, // Nullable - puede crearse sin fecha de ingreso
     val tipoSlaId: Int
 )
 
@@ -28,6 +28,6 @@ data class CreateSolicitudDto(
 data class UpdateSolicitudDto(
     val rol: String,
     val fechaSolicitud: String,
-    val fechaIngreso: String,
+    val fechaIngreso: String?, // Nullable - puede actualizarse sin fecha de ingreso
     val tipoSlaId: Int
 )
