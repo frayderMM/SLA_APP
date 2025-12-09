@@ -14,7 +14,6 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -40,7 +39,6 @@ android {
 }
 
 dependencies {
-
     // --- Dependencias existentes ---
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -56,7 +54,6 @@ dependencies {
     implementation(libs.ui.graphics)
 
     testImplementation(libs.junit)
-
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -64,76 +61,36 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-
-
-
-    // ============================================================
-    // 🔥 RETROFIT + OKHTTP
-    // ============================================================
+    // Retrofit & Networking
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
-
     implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.11")
     implementation("com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.11")
 
-
-
-    // ============================================================
-    // 🔥 COROUTINES
-    // ============================================================
+    // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
-
-
-    // ============================================================
-    // 🔥 DATASTORE
-    // ============================================================
+    // Datastore & JWT
     implementation("androidx.datastore:datastore-preferences:1.1.1")
-
-    // ============================================================
-    // 🔥 JWT DECODE
-    // ============================================================
     implementation("com.auth0.android:jwtdecode:2.0.2")
 
-
-    // ============================================================
-    // 🔥 NAVIGATION COMPOSE
-    // ============================================================
+    // Navigation & Lifecycle
     implementation("androidx.navigation:navigation-compose:2.8.0")
-
-
-
-    // ============================================================
-    // 🔥 LIFECYCLE + VIEWMODEL COMPOSE
-    // ============================================================
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.0")
 
-
-
-    // ============================================================
-    // 🔥 MATERIAL ICONS (opcional recomendable)
-    // ============================================================
+    // Icons & Activity
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
-
-
-
-    // ============================================================
-    // 🔥 ACTIVITY KTX
-    // ============================================================
     implementation("androidx.activity:activity-ktx:1.9.0")
 
-
-    // ============================================================
-    // VICO CHARTS
-    // ============================================================
-    implementation("com.patrykandpatrick.vico:compose-m3:1.14.0")
-
-
-    // ============================================================
-    // 🔥 WORK MANAGER
-    // ============================================================
+    // Work Manager
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
+    // ============================================================
+    // 🔥 VICO CHARTS - VERSIÓN ESTABLE 1.16.0
+    // ============================================================
+    // Usamos estas dos líneas específicas
+    implementation("com.patrykandpatrick.vico:core:1.16.0")
+    implementation("com.patrykandpatrick.vico:compose-m3:1.16.0")
 }

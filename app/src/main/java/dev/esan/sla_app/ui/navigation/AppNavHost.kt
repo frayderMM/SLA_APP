@@ -193,7 +193,8 @@ private fun NavGraphBuilder.dashboardGraph(navController: NavHostController, app
                 DashboardScreen(
                     viewModel = insightVM,
                     onNavigateToAlerts = { navController.navigate(Routes.ALERTAS) },
-                    onNavigateToRegression = { navController.navigate(Routes.REGRESSION) }
+                    onNavigateToRegression = { navController.navigate(Routes.REGRESSION) },
+                    onNavigateToProfile = { navController.navigate(Routes.PROFILE) }
                 )
             }
         }
