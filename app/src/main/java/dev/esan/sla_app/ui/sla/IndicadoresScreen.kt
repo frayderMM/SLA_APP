@@ -12,15 +12,18 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -171,14 +174,16 @@ fun IndicadoresScreen(
                                 seleccion = slaSeleccionado,
                                 opciones = itemsSla,
                                 onSelected = { slaSeleccionado = it },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                leadingIcon = Icons.Default.List
                             )
                             DropdownFiltro(
                                 label = "Estado",
                                 seleccion = estadoSeleccionado,
                                 opciones = opcionesEstado,
                                 onSelected = { estadoSeleccionado = it },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                leadingIcon = Icons.Default.List
                             )
                         }
 
@@ -284,7 +289,8 @@ fun DropdownFiltro(
     seleccion: String,
     opciones: List<String>,
     onSelected: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    leadingIcon: ImageVector
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -293,16 +299,21 @@ fun DropdownFiltro(
         onExpandedChange = { expanded = !expanded },
         modifier = modifier
     ) {
-        OutlinedTextField(
+        TextField(
+            modifier = Modifier.menuAnchor(),
             value = seleccion,
             onValueChange = {},
             readOnly = true,
             label = { Text(label) },
-            trailingIcon = {
-                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-            },
-            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-            modifier = Modifier.menuAnchor()
+            leadingIcon = { Icon(leadingIcon, contentDescription = null) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            colors = ExposedDropdownMenuDefaults.textFieldColors(
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+            ),
+            shape = MaterialTheme.shapes.medium
         )
         ExposedDropdownMenu(
             expanded = expanded,
@@ -314,7 +325,10 @@ fun DropdownFiltro(
                     onClick = {
                         onSelected(opcion)
                         expanded = false
-                    }
+                    },
+                    trailingIcon = if (opcion == seleccion) {
+                        { Icon(Icons.Default.Check, "Selected") }
+                    } else null
                 )
             }
         }
