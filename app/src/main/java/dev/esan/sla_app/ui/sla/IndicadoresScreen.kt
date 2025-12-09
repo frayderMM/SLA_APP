@@ -224,7 +224,11 @@ private fun savePdfToFile(context: Context, body: ResponseBody, fileName: String
     }
     return uri
 }
-// ... (sin cambios)
+
+private fun formatFecha(fecha: String): String {
+    return fecha.substringBefore("T")
+}
+
 @Composable
 fun SlaCard(item: SlaIndicadorDto) {
     val cumple = item.resultado.lowercase().startsWith("cumple ")
@@ -250,16 +254,14 @@ fun SlaCard(item: SlaIndicadorDto) {
             }
             Spacer(Modifier.height(12.dp))
             Text("Tipo SLA: ${item.tipoSla}", style = MaterialTheme.typography.bodyMedium)
-            Text("Fecha Solicitud: ${item.fechaSolicitud}", style = MaterialTheme.typography.bodySmall)
-            Text("Fecha Ingreso: ${item.fechaIngreso}", style = MaterialTheme.typography.bodySmall)
+            Text("Fecha Solicitud: ${formatFecha(item.fechaSolicitud)}", style = MaterialTheme.typography.bodySmall)
+            Text("Fecha Ingreso: ${formatFecha(item.fechaIngreso)}", style = MaterialTheme.typography.bodySmall)
             Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(icono, null, tint = colorEstado)
                 Spacer(Modifier.width(6.dp))
                 Text("Días: ${item.dias}", fontWeight = FontWeight.SemiBold, color = colorEstado)
             }
-            Spacer(Modifier.height(12.dp))
-            Text(item.resultado, fontWeight = FontWeight.Bold, color = colorEstado)
         }
     }
 }
