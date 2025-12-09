@@ -22,7 +22,7 @@ sealed class BottomNavItem(
 
     object Indicadores : BottomNavItem(
         route = Routes.INDICADORES,
-        title = "Indicadores",
+        title = "Solicitudes",
         icon = Icons.Default.Assessment
     )
 

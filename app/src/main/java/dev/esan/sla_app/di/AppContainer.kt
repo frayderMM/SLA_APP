@@ -4,6 +4,7 @@ import android.content.Context
 import dev.esan.sla_app.data.datastore.DataStoreManager
 import dev.esan.sla_app.data.remote.RetrofitClient
 import dev.esan.sla_app.data.remote.api.*
+import dev.esan.sla_app.data.remote.repository.ExportExcelRepository
 import dev.esan.sla_app.data.repository.*
 
 interface AppContainer {
@@ -15,9 +16,13 @@ interface AppContainer {
     val reportesRepository: ReportesRepository
     val profileRepository: ProfileRepository
     val emailRepository: EmailRepository
+
     val assistantApi: AssistantApi
-    val assistantRepository: AssistantRepository // <-- ✅ AÑADIDO
+    val assistantRepository: AssistantRepository
     val dataStoreManager: DataStoreManager
+
+    val excelUploadRepository: ExcelUploadRepository
+    val exportExcelRepository: ExportExcelRepository  // ✅ AGREGADO
 }
 
 class DefaultAppContainer(context: Context) : AppContainer {
@@ -34,15 +39,13 @@ class DefaultAppContainer(context: Context) : AppContainer {
     private val reportesApi: ReportesApi by lazy { retrofit.create(ReportesApi::class.java) }
     private val profileApi: ProfileApi by lazy { retrofit.create(ProfileApi::class.java) }
     override val assistantApi: AssistantApi by lazy { retrofit.create(AssistantApi::class.java) }
+    private val exportExcelApi: ExportExcelApi by lazy { retrofit.create(ExportExcelApi::class.java) } // ✅ API NUEVA
+    private val excelUploadApi: ExcelUploadApi by lazy { retrofit.create(ExcelUploadApi::class.java) }
 
     // Repositories
     override val authRepository: AuthRepository by lazy { AuthRepository(authApi) }
     override val insightRepository: InsightRepository by lazy { InsightRepository(dashboardApi) }
-
-    override val slaRepository: SlaRepository by lazy {
-        SlaRepository(slaApi, tiposSlaApi)
-    }
-
+    override val slaRepository: SlaRepository by lazy { SlaRepository(slaApi, tiposSlaApi) }
     override val alertasRepository: AlertasRepository by lazy { AlertasRepository(alertasApi) }
     override val solicitudesRepository: SolicitudesRepository by lazy {
         SolicitudesRepository(solicitudesApi, tiposSlaApi)
@@ -50,9 +53,17 @@ class DefaultAppContainer(context: Context) : AppContainer {
     override val reportesRepository: ReportesRepository by lazy { ReportesRepository(reportesApi) }
     override val profileRepository: ProfileRepository by lazy { ProfileRepository(profileApi) }
     override val emailRepository: EmailRepository by lazy { EmailRepository(context, alertasRepository) }
-    override val assistantRepository: AssistantRepository by lazy { AssistantRepository(assistantApi) } // <-- ✅ AÑADIDO
+    override val assistantRepository: AssistantRepository by lazy { AssistantRepository(assistantApi) }
 
     override val dataStoreManager: DataStoreManager by lazy {
         DataStoreManager(context.applicationContext)
+    }
+
+    override val excelUploadRepository: ExcelUploadRepository by lazy {
+        ExcelUploadRepository(excelUploadApi, dataStoreManager, context)
+    }
+
+    override val exportExcelRepository: ExportExcelRepository by lazy {
+        ExportExcelRepository(exportExcelApi, dataStoreManager)
     }
 }

@@ -1,4 +1,3 @@
-
 package dev.esan.sla_app.ui.navigation
 
 import androidx.compose.foundation.layout.Box
@@ -24,21 +23,17 @@ import dev.esan.sla_app.data.remote.RetrofitClient
 import dev.esan.sla_app.di.AppContainer
 import dev.esan.sla_app.di.DefaultAppContainer
 import dev.esan.sla_app.ui.alertas.*
-import dev.esan.sla_app.ui.assistant.AssistantScreen
-import dev.esan.sla_app.ui.assistant.AssistantViewModel
-import dev.esan.sla_app.ui.assistant.AssistantViewModelFactory
+import dev.esan.sla_app.ui.assistant.*
 import dev.esan.sla_app.ui.dashboard.*
-import dev.esan.sla_app.ui.insight.InsightPanelViewModel
-import dev.esan.sla_app.ui.insight.InsightPanelViewModelFactory
+import dev.esan.sla_app.ui.excel.ExportExcelViewModel
+import dev.esan.sla_app.ui.excel.ExportExcelViewModelFactory
+import dev.esan.sla_app.ui.insight.*
 import dev.esan.sla_app.ui.login.*
-import dev.esan.sla_app.ui.pdf.PdfViewModel
-import dev.esan.sla_app.ui.pdf.PdfViewModelFactory
+import dev.esan.sla_app.ui.pdf.*
 import dev.esan.sla_app.ui.profile.*
 import dev.esan.sla_app.ui.regression.RegressionScreen
 import dev.esan.sla_app.ui.security.SecurityScreen
-import dev.esan.sla_app.ui.settings.SettingsScreen
-import dev.esan.sla_app.ui.settings.SettingsViewModel
-import dev.esan.sla_app.ui.settings.SettingsViewModelFactory
+import dev.esan.sla_app.ui.settings.*
 import dev.esan.sla_app.ui.sla.*
 import dev.esan.sla_app.ui.solicitudes.*
 
@@ -83,10 +78,15 @@ fun AppNavHost(
             val pdfVM: PdfViewModel = viewModel(
                 factory = PdfViewModelFactory(appContainer.reportesRepository)
             )
+            val excelVM: ExportExcelViewModel = viewModel(
+                factory = ExportExcelViewModelFactory(appContainer.exportExcelRepository)
+            )
+
             MainScreen(navController = navController) {
                 IndicadoresScreen(
                     indicadoresViewModel = indicadoresVM,
                     pdfViewModel = pdfVM,
+                    excelViewModel = excelVM,
                     onNavigateToSolicitudes = { navController.navigate(Routes.SOLICITUDES_GRAPH) }
                 )
             }
@@ -121,14 +121,12 @@ fun AppNavHost(
             val userState = dataStore.getAuthenticatedUserFlow().collectAsState(initial = null)
             val userId = userState.value?.id?.toIntOrNull() ?: 0
 
-            val context = LocalContext.current  // ✅ SE AGREGA CONTEXTO
-
             if (userId != 0) {
                 val assistantViewModel: AssistantViewModel = viewModel(
                     factory = AssistantViewModelFactory(
                         appContainer.assistantRepository,
                         userId,
-                        context   // ✅ ESTE PARÁMETRO ERA OBLIGATORIO
+                        context
                     )
                 )
 
@@ -137,7 +135,6 @@ fun AppNavHost(
                 }
             }
         }
-
 
         composable(Routes.PROFILE) {
             val profileVM: ProfileViewModel = viewModel(
@@ -216,39 +213,52 @@ private fun NavGraphBuilder.dashboardGraph(navController: NavHostController, app
 
 private fun NavGraphBuilder.solicitudesGraph(navController: NavHostController, appContainer: AppContainer) {
     navigation(startDestination = Routes.SOLICITUDES_LIST, route = Routes.SOLICITUDES_GRAPH) {
+
         composable(Routes.SOLICITUDES_LIST) { backStackEntry ->
             val parentEntry = remember(backStackEntry) { navController.getBackStackEntry(Routes.SOLICITUDES_GRAPH) }
-            val solicitudesVM: SolicitudesViewModel = viewModel(viewModelStoreOwner = parentEntry, factory = SolicitudesViewModelFactory(appContainer.solicitudesRepository))
+
+            val solicitudesVM: SolicitudesViewModel = viewModel(
+                viewModelStoreOwner = parentEntry,
+                factory = SolicitudesViewModelFactory(appContainer.solicitudesRepository)
+            )
+
+            val importVM: ImportExcelViewModel = viewModel(
+                factory = ImportExcelViewModelFactory(appContainer.excelUploadRepository)
+            )
 
             SolicitudesScreen(
                 viewModel = solicitudesVM,
+                importVM = importVM,
                 onCrear = { navController.navigate(Routes.SOLICITUD_CREAR) },
                 onEditar = { id -> navController.navigate(Routes.SOLICITUD_EDITAR.replace("{id}", id.toString())) },
-                onBack = { navController.popBackStack() },
-                onAddFromExcel = { navController.navigate(Routes.SOLICITUD_IMPORT) } // ✅ NAVEGACIÓN CONECTADA
+                onBack = { navController.popBackStack() }
             )
         }
+
         composable(Routes.SOLICITUD_CREAR) { backStackEntry ->
             val parentEntry = remember(backStackEntry) { navController.getBackStackEntry(Routes.SOLICITUDES_GRAPH) }
-            val solicitudesVM: SolicitudesViewModel = viewModel(viewModelStoreOwner = parentEntry, factory = SolicitudesViewModelFactory(appContainer.solicitudesRepository))
+            val solicitudesVM: SolicitudesViewModel = viewModel(
+                viewModelStoreOwner = parentEntry,
+                factory = SolicitudesViewModelFactory(appContainer.solicitudesRepository)
+            )
 
             CrearSolicitudScreen(viewModel = solicitudesVM, onBack = { navController.popBackStack() })
         }
+
         composable(
             route = Routes.SOLICITUD_EDITAR,
             arguments = listOf(navArgument("id") { type = NavType.IntType })
         ) { backStackEntry ->
             val parentEntry = remember(backStackEntry) { navController.getBackStackEntry(Routes.SOLICITUDES_GRAPH) }
-            val solicitudesVM: SolicitudesViewModel = viewModel(viewModelStoreOwner = parentEntry, factory = SolicitudesViewModelFactory(appContainer.solicitudesRepository))
+            val solicitudesVM: SolicitudesViewModel = viewModel(
+                viewModelStoreOwner = parentEntry,
+                factory = SolicitudesViewModelFactory(appContainer.solicitudesRepository)
+            )
 
             val id = backStackEntry.arguments?.getInt("id")
             if (id != null) {
                 EditarSolicitudScreen(id = id, viewModel = solicitudesVM, onBack = { navController.popBackStack() })
             }
-        }
-        // ✅ DESTINO AÑADIDO PARA LA PANTALLA DE IMPORTACIÓN
-        composable(Routes.SOLICITUD_IMPORT) {
-            ImportSolicitudesScreen(onBack = { navController.popBackStack() })
         }
     }
 }

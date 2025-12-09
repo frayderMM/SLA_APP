@@ -11,7 +11,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.layout.ContentScale
@@ -36,8 +35,12 @@ fun ProfileScreen(
     LaunchedEffect(Unit) {
         viewModel.changePasswordResult.collectLatest {
             it.fold(
-                onSuccess = { Toast.makeText(context, "Contraseña cambiada con éxito", Toast.LENGTH_SHORT).show() },
-                onFailure = { Toast.makeText(context, "Error al cambiar la contraseña", Toast.LENGTH_SHORT).show() }
+                onSuccess = {
+                    Toast.makeText(context, "Contraseña cambiada con éxito", Toast.LENGTH_SHORT).show()
+                },
+                onFailure = {
+                    Toast.makeText(context, "Error al cambiar la contraseña", Toast.LENGTH_SHORT).show()
+                }
             )
         }
     }
@@ -60,7 +63,7 @@ fun ProfileScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
     ) {
         ProfileHeaderOcean(name = currentUser.nombre ?: "Usuario")
@@ -85,86 +88,212 @@ fun ProfileScreen(
 
 @Composable
 fun ProfileHeaderOcean(name: String) {
-    Box(modifier = Modifier.fillMaxWidth().height(310.dp)) {
-        Image(painter = painterResource(R.drawable.fondo), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-        Canvas(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(170.dp)) {
+    val bgColor = MaterialTheme.colorScheme.background
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(310.dp)
+    ) {
+        Image(
+            painter = painterResource(R.drawable.fondo),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        Canvas(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(170.dp)
+        ) {
             val path = Path().apply {
                 moveTo(0f, size.height * 0.70f)
-                cubicTo(size.width * 0.23f, size.height * 0.70f, size.width * 0.30f, size.height * 0.20f, size.width * 0.50f, size.height * 0.20f)
-                cubicTo(size.width * 0.70f, size.height * 0.20f, size.width * 0.76f, size.height * 0.70f, size.width, size.height * 0.70f)
+                cubicTo(
+                    size.width * 0.23f, size.height * 0.70f,
+                    size.width * 0.30f, size.height * 0.20f,
+                    size.width * 0.50f, size.height * 0.20f
+                )
+                cubicTo(
+                    size.width * 0.70f, size.height * 0.20f,
+                    size.width * 0.76f, size.height * 0.70f,
+                    size.width, size.height * 0.70f
+                )
                 lineTo(size.width, size.height)
                 lineTo(0f, size.height)
                 close()
             }
-            drawPath(path, color = Color.White, style = Fill)
+
+            drawPath(
+                path = path,
+                color = bgColor,
+                style = Fill
+            )
         }
-        Column(modifier = Modifier.align(Alignment.BottomCenter).offset(y = 60.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Image(painter = painterResource(R.drawable.alexa), contentDescription = null, modifier = Modifier.size(150.dp).clip(CircleShape).border(5.dp, Color.White, CircleShape).shadow(12.dp), contentScale = ContentScale.Crop)
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .offset(y = 60.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Image(
+                painter = painterResource(R.drawable.alexa),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(150.dp)
+                    .clip(CircleShape)
+                    .border(5.dp, bgColor, CircleShape)
+                    .shadow(12.dp),
+                contentScale = ContentScale.Crop
+            )
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = name, fontSize = 23.sp, fontWeight = FontWeight.Bold, color = Color(0xFF014A59))
+            Text(
+                text = name,
+                fontSize = 23.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
         }
     }
 }
 
 @Composable
 fun CardPersonalOcean(nombre: String, email: String, rol: String) {
-    Card(modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth(), colors = CardDefaults.cardColors(Color(0xFFEBF9FF)), shape = RoundedCornerShape(22.dp), elevation = CardDefaults.cardElevation(8.dp)) {
+    Card(
+        modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = RoundedCornerShape(22.dp),
+        elevation = CardDefaults.cardElevation(8.dp)
+    ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text("Información Personal", fontSize = 19.sp, fontWeight = FontWeight.Bold, color = Color(0xFF014A59))
+            Text(
+                "Información Personal",
+                fontSize = 19.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
             Spacer(modifier = Modifier.height(12.dp))
-            InfoRowOcean(icon = R.drawable.ic_user, label = "Nombre", value = nombre)
+            InfoRowOcean(R.drawable.ic_user, "Nombre", nombre)
             Divider()
-            InfoRowOcean(icon = R.drawable.ic_email, label = "Correo", value = email)
+            InfoRowOcean(R.drawable.ic_email, "Correo", email)
             Divider()
-            InfoRowOcean(icon = R.drawable.ic_shield, label = "Rol", value = rol)
+            InfoRowOcean(R.drawable.ic_shield, "Rol", rol)
         }
     }
 }
 
 @Composable
 fun InfoRowOcean(icon: Int, label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(painter = painterResource(icon), contentDescription = null, tint = Color(0xFF0084A8), modifier = Modifier.size(23.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(23.dp)
+        )
         Spacer(modifier = Modifier.width(18.dp))
         Column {
-            Text(label, fontSize = 13.sp, color = Color(0xFF5A6168))
-            Text(value, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF014A59))
+            Text(
+                label,
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                value,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
 
 @Composable
 fun CardMenuOcean(onSecurityClick: () -> Unit, onSettingsClick: () -> Unit) {
-    Card(modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth(), colors = CardDefaults.cardColors(Color(0xFFEBF9FF)), elevation = CardDefaults.cardElevation(8.dp), shape = RoundedCornerShape(22.dp)) {
+    Card(
+        modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(8.dp),
+        shape = RoundedCornerShape(22.dp)
+    ) {
         Column(modifier = Modifier.padding(6.dp)) {
-            MenuItemOcean(R.drawable.ic_notifications, "Notificaciones", onClick = {})
+            MenuItemOcean(R.drawable.ic_notifications, "Notificaciones") {}
             Divider()
-            MenuItemOcean(R.drawable.ic_settings, "Configuración", onClick = onSettingsClick)
+            MenuItemOcean(R.drawable.ic_settings, "Configuración", onSettingsClick)
             Divider()
-            MenuItemOcean(R.drawable.ic_help, "Centro de ayuda", onClick = {})
+            MenuItemOcean(R.drawable.ic_help, "Centro de ayuda") {}
             Divider()
-            MenuItemOcean(R.drawable.ic_security, "Seguridad", onClick = onSecurityClick)
+            MenuItemOcean(R.drawable.ic_security, "Seguridad", onSecurityClick)
         }
     }
 }
 
 @Composable
 fun MenuItemOcean(icon: Int, title: String, onClick: () -> Unit) {
-    Row(modifier = Modifier.fillMaxWidth().height(56.dp).clickable(onClick = onClick).padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(painter = painterResource(icon), contentDescription = null, tint = Color(0xFF00AACC), modifier = Modifier.size(22.dp))
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(22.dp)
+        )
         Spacer(modifier = Modifier.width(18.dp))
-        Text(text = title, fontSize = 17.sp, fontWeight = FontWeight.Medium, color = Color(0xFF014A59), modifier = Modifier.weight(1f))
-        Icon(painter = painterResource(R.drawable.ic_arrow_forward), contentDescription = null, tint = Color(0xFF0084A8), modifier = Modifier.size(19.dp))
+        Text(
+            text = title,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
+        )
+        Icon(
+            painter = painterResource(R.drawable.ic_arrow_forward),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(19.dp)
+        )
     }
 }
 
 @Composable
 fun LogoutButtonOcean(onClick: () -> Unit) {
-    Button(onClick = onClick, modifier = Modifier.width(240.dp).height(56.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0x33FF4646)), shape = RoundedCornerShape(16.dp)) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.width(240.dp).height(56.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+        ),
+        shape = RoundedCornerShape(16.dp)
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(painter = painterResource(R.drawable.ic_logout), contentDescription = null, tint = Color.Red, modifier = Modifier.size(22.dp))
+            Icon(
+                painter = painterResource(R.drawable.ic_logout),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(22.dp)
+            )
             Spacer(modifier = Modifier.width(12.dp))
-            Text("Cerrar sesión", fontSize = 18.sp, fontWeight = FontWeight.Medium, color = Color.Red)
+            Text(
+                "Cerrar sesión",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.error
+            )
         }
     }
 }

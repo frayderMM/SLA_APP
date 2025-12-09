@@ -6,73 +6,97 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.UploadFile
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ImportSolicitudesScreen(
-    onBack: () -> Unit
+    viewModel: ImportExcelViewModel,
+    onBack: () -> Unit = {}
 ) {
-    var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
+    var selectedFile by remember { mutableStateOf<Uri?>(null) }
 
-    // Launcher para el selector de archivos
-    val filePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(),
-        onResult = { uri ->
-            selectedFileUri = uri
-        }
-    )
+    val state by viewModel.state.collectAsState()
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        selectedFile = uri
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Importar desde Excel") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Regresar") } }
+                title = { Text("Importar Solicitudes") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                    }
+                }
             )
         }
     ) { padding ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .padding(20.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(
-                imageVector = Icons.Default.UploadFile,
-                contentDescription = null,
-                modifier = Modifier.size(120.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "Selecciona un archivo de Excel (.xlsx) para importar las solicitudes en lote.",
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(modifier = Modifier.height(24.dp))
 
-            // Muestra el nombre del archivo si se seleccionó uno
-            if (selectedFileUri != null) {
-                Text(
-                    text = "Archivo: ${selectedFileUri?.path?.substringAfterLast('/')}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
+            Button(onClick = { launcher.launch("*/*") }) {
+                Text("Seleccionar archivo Excel")
             }
 
-            Button(onClick = {
-                // Abre el selector de archivos de tipo Excel
-                filePickerLauncher.launch("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-            }) {
-                Text("Seleccionar archivo")
+            Spacer(modifier = Modifier.height(20.dp))
+
+            selectedFile?.let {
+                Text("Archivo seleccionado ✔️")
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Button(
+                onClick = {
+                    selectedFile?.let { viewModel.upload(it) }
+                },
+                enabled = selectedFile != null
+            ) {
+                Text("Subir archivo")
+            }
+
+            Spacer(modifier = Modifier.height(30.dp))
+
+            // ===============================
+            // ESTADOS
+            // ===============================
+            when (state) {
+
+                is ExcelState.Loading -> CircularProgressIndicator()
+
+                is ExcelState.Success -> {
+                    val data = state as ExcelState.Success
+                    Text("Éxito: ${data.message}")
+                    if (data.errores.isNotEmpty()) {
+                        Spacer(Modifier.height(12.dp))
+                        Text("Errores:")
+                        data.errores.forEach { Text("- $it") }
+                    }
+                }
+
+                is ExcelState.Error -> {
+                    val err = state as ExcelState.Error
+                    Text("Error: ${err.message}", color = MaterialTheme.colorScheme.error)
+                }
+
+                else -> {}
             }
         }
     }
