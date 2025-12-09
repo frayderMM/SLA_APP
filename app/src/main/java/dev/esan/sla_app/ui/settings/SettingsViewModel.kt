@@ -1,4 +1,3 @@
-
 package dev.esan.sla_app.ui.settings
 
 import androidx.lifecycle.ViewModel
@@ -16,24 +15,29 @@ class SettingsViewModel(private val userPreferences: UserPreferences) : ViewMode
     val state: StateFlow<SettingsState> = _state.asStateFlow()
 
     init {
+        // 🔹 TEMA (nuevo themeIndex: Int)
         viewModelScope.launch {
-            userPreferences.theme.collect {
-                _state.value = _state.value.copy(theme = it ?: "system")
+            userPreferences.themeIndex.collect { index ->
+                _state.value = _state.value.copy(themeIndex = index)
             }
         }
+
+        // 🔹 IDIOMA
         viewModelScope.launch {
-            userPreferences.language.collect {
-                _state.value = _state.value.copy(language = it ?: "es")
+            userPreferences.language.collect { lang ->
+                _state.value = _state.value.copy(language = lang)
             }
         }
     }
 
-    fun onThemeChange(theme: String) {
+    // ========== ACTUALIZAR TEMA ==========
+    fun onThemeChanged(index: Int) {
         viewModelScope.launch {
-            userPreferences.saveTheme(theme)
+            userPreferences.saveThemeIndex(index)
         }
     }
 
+    // ========== ACTUALIZAR IDIOMA ==========
     fun onLanguageChange(language: String) {
         viewModelScope.launch {
             userPreferences.saveLanguage(language)

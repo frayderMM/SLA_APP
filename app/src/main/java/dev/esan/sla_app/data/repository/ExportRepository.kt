@@ -1,35 +1,29 @@
-package dev.esan.sla_app.data.repository
+package dev.esan.sla_app.data.remote.repository
 
-import dev.esan.sla_app.data.remote.api.ExportApi
-import dev.esan.sla_app.utils.Resource
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import dev.esan.sla_app.data.datastore.DataStoreManager
+import dev.esan.sla_app.data.remote.api.ExportExcelApi
+import kotlinx.coroutines.flow.first
 import okhttp3.ResponseBody
 import retrofit2.Response
-import java.io.IOException
 
-class ExportRepository(private val api: ExportApi) {
+class ExportExcelRepository(
+    private val api: ExportExcelApi,
+    private val dataStore: DataStoreManager
+) {
 
-    private suspend fun <T> safeApiCall(apiCall: suspend () -> Response<T>): Resource<T> {
-        return withContext(Dispatchers.IO) {
-            try {
-                val response = apiCall()
-                if (response.isSuccessful) {
-                    response.body()?.let {
-                        Resource.Success(it)
-                    } ?: Resource.Error("Respuesta exitosa pero cuerpo vacío.")
-                } else {
-                    val errorMsg = response.errorBody()?.string() ?: "Sin mensaje de error."
-                    Resource.Error("Error ${response.code()}: $errorMsg")
-                }
-            } catch (e: IOException) {
-                Resource.Error("Error de red. Revisa tu conexión a internet.")
-            } catch (e: Exception) {
-                Resource.Error("Error inesperado: ${e.message}")
-            }
+    suspend fun downloadExcel(year: Int): Response<ResponseBody> {
+
+        // Si deseas forzar login antes de descargar:
+        val token = dataStore.token.first()
+        if (token.isNullOrBlank()) {
+            return Response.error(401, ResponseBody.create(null, "Token vacío"))
+        }
+
+        // Año actual → usa downloadExcelActual()
+        return if (year == java.time.LocalDate.now().year) {
+            api.downloadExcelActual()
+        } else {
+            api.downloadExcelByYear(year)
         }
     }
-
-    suspend fun exportarSolicitudes(): Resource<ResponseBody> = safeApiCall { api.exportarSolicitudes() }
-
 }

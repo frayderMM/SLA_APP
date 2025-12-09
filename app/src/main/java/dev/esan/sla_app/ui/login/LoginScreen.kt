@@ -1,6 +1,7 @@
 package dev.esan.sla_app.ui.login
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,7 +13,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -23,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.esan.sla_app.R
 
-
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel,
@@ -31,27 +32,27 @@ fun LoginScreen(
 ) {
     val state by viewModel.state.collectAsState()
 
+    // ⭐ Obtenemos los colores dinámicos del tema
+    val c = MaterialTheme.colorScheme
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    // ✔ Mantengo tu navegación EXACTA
     LaunchedEffect(state.success) {
-        if (state.success) {
-            onSuccess()
-        }
+        if (state.success) onSuccess()
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(c.background)     // ⭐ ahora sí aplica el tema
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
         Spacer(modifier = Modifier.height(70.dp))
 
-        // ⭐ Inserto el LOGO del diseño 2
         Image(
             painter = painterResource(id = R.drawable.logotata),
             contentDescription = null,
@@ -62,35 +63,61 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(70.dp))
 
-        // ⭐ TARJETA con borde y shape del diseño 2
+        // ⭐ TARJETA con borde dinámico del tema
         Column(
             modifier = Modifier
                 .width(350.dp)
-                .border(3.dp, Color(0x2AFF9969), RoundedCornerShape(20.dp))
+                .border(
+                    width = 3.dp,
+                    brush = Brush.linearGradient(
+                        listOf(
+                            c.primary.copy(alpha = 0.50f),
+                            c.primary.copy(alpha = 0.18f)
+                        )
+                    ),
+                    shape = RoundedCornerShape(20.dp)
+                )
                 .padding(20.dp)
         ) {
 
-            // ⭐ EMAIL (ANTES username)
+            // ----------------------------------
+            // EMAIL
+            // ----------------------------------
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
                 label = {
                     Text(
-                        "Usuario / Correo",
+                        "Correo",
                         fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
+                        fontSize = 18.sp,
+                        color = c.primary
                     )
                 },
                 enabled = !state.loading,
-                textStyle = TextStyle(fontSize = 20.sp),
+                textStyle = TextStyle(
+                    fontSize = 20.sp,
+                    color = c.onSurface      // ⭐ se adapta al tema
+                ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = c.primary,
+                    unfocusedBorderColor = c.outline,
+                    cursorColor = c.primary,
+                    focusedTextColor = c.onSurface,
+                    unfocusedTextColor = c.onSurface,
+                    focusedLabelColor = c.primary,
+                    unfocusedLabelColor = c.onSurfaceVariant
+                )
             )
 
             Spacer(Modifier.height(12.dp))
 
-            // ⭐ CONTRASEÑA con ícono visible / oculto del diseño 2
+            // ----------------------------------
+            // PASSWORD
+            // ----------------------------------
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -98,11 +125,15 @@ fun LoginScreen(
                     Text(
                         "Contraseña",
                         fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
+                        fontSize = 18.sp,
+                        color = c.primary
                     )
                 },
                 enabled = !state.loading,
-                textStyle = TextStyle(fontSize = 20.sp),
+                textStyle = TextStyle(
+                    fontSize = 20.sp,
+                    color = c.onSurface        // ⭐ dinámico
+                ),
                 visualTransformation =
                     if (passwordVisible) VisualTransformation.None
                     else PasswordVisualTransformation(),
@@ -111,24 +142,37 @@ fun LoginScreen(
                         Icon(
                             if (passwordVisible) Icons.Filled.Visibility
                             else Icons.Filled.VisibilityOff,
-                            contentDescription = null
+                            contentDescription = null,
+                            tint = c.primary
                         )
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = c.primary,
+                    unfocusedBorderColor = c.outline,
+                    cursorColor = c.primary,
+                    focusedTextColor = c.onSurface,
+                    unfocusedTextColor = c.onSurface,
+                    focusedLabelColor = c.primary,
+                    unfocusedLabelColor = c.onSurfaceVariant
+                )
             )
         }
 
         Spacer(modifier = Modifier.height(30.dp))
 
-        // ⭐ Botón estilizado del diseño 2
+        // ----------------------------------
+        // BOTÓN PRINCIPAL
+        // ----------------------------------
         Button(
             onClick = { viewModel.login(email, password) },
             enabled = !state.loading,
             modifier = Modifier.width(350.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF3280C4)
+                containerColor = c.primary,     // ⭐ dinámico
+                contentColor = c.onPrimary      // ⭐ dinámico
             ),
             shape = RoundedCornerShape(10.dp)
         ) {
@@ -139,15 +183,24 @@ fun LoginScreen(
             )
         }
 
-        // ⭐ Indicadores del estado original (loading, error)
+        // ----------------------------------
+        // LOADING
+        // ----------------------------------
         if (state.loading) {
             Spacer(Modifier.height(16.dp))
-            CircularProgressIndicator()
+            CircularProgressIndicator(color = c.primary)
         }
 
+        // ----------------------------------
+        // ERROR
+        // ----------------------------------
         state.error?.let {
             Spacer(Modifier.height(16.dp))
-            Text(text = it, color = MaterialTheme.colorScheme.error)
+            Text(
+                text = it,
+                color = c.error,     // ⭐ dinámico para dark/light
+                fontWeight = FontWeight.SemiBold
+            )
         }
     }
 }

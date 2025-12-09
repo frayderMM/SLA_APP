@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ink.strokes)
     implementation(libs.androidx.compose.foundation)
+    implementation(libs.ui.graphics)
 
     testImplementation(libs.junit)
 

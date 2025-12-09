@@ -8,21 +8,31 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
-    // 1. Creamos una única instancia pública de nuestro interceptor con estado.
+    // Interceptor que agrega el token a las peticiones
     val authInterceptor = AuthInterceptor()
 
-    // 2. El cliente OkHttp ahora usa esta única instancia y es privado.
+    // Cliente OkHttp
     private val okHttpClient: OkHttpClient by lazy {
+
         val logging = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
+
         OkHttpClient.Builder()
-            .addInterceptor(authInterceptor) // Se añade la instancia NO BLOQUEANTE
+            .addInterceptor { chain ->
+                // 🔥 FIX OBLIGATORIO PARA CLOUDFLARE / RENDER
+                val newRequest = chain.request().newBuilder()
+                    .addHeader("Accept", "application/json") // <<--- AQUÍ EL FIX
+                    .build()
+
+                chain.proceed(newRequest)
+            }
+            .addInterceptor(authInterceptor)
             .addInterceptor(logging)
             .build()
     }
 
-    // 3. El cliente Retrofit ahora es una instancia 'lazy' singleton que no necesita parámetros.
+    // Instancia Retrofit
     val instance: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(Constants.BASE_URL)

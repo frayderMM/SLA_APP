@@ -6,7 +6,7 @@ import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,16 +26,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.*
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dev.esan.sla_app.ui.theme.*
 import kotlinx.coroutines.delay
 
 //---------------------------------------------------------
-// Quick Questions (solo 4 premium)
+// Quick Questions
 //---------------------------------------------------------
 data class QuickQuestion(val id: Int, val text: String)
 
@@ -62,21 +62,13 @@ fun AssistantScreen(viewModel: AssistantViewModel) {
         }
     }
 
-    val background = Brush.verticalGradient(
-        listOf(
-            Color(0xFF07111F),
-            Color(0xFF0A2040),
-            Color(0xFF093B80)
-        )
-    )
-
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(background)
+            .background(assistantBackground())
     ) {
 
-        HeaderSection()
+        HeaderSectionPremium()
 
         QuickQuestionsRowPremium(
             questions = QUICK_QUESTIONS,
@@ -101,7 +93,7 @@ fun AssistantScreen(viewModel: AssistantViewModel) {
         AnimatedVisibility(viewModel.isLoading.value) {
             LinearProgressIndicator(
                 modifier = Modifier.fillMaxWidth(),
-                color = Color(0xFF4A90E2)
+                color = MaterialTheme.colorScheme.primary
             )
         }
 
@@ -119,48 +111,102 @@ fun AssistantScreen(viewModel: AssistantViewModel) {
 }
 
 //---------------------------------------------------------
-// Header
+// 🔥 CABECERA PREMIUM CON CONTRASTE
 //---------------------------------------------------------
 @Composable
-private fun HeaderSection() {
-    Row(
+private fun HeaderSectionPremium() {
+
+    val c = MaterialTheme.colorScheme
+
+    // Glow inferior dinámico
+    val glow = Brush.verticalGradient(
+        listOf(
+            c.primary.copy(alpha = 0.85f),
+            c.primary.copy(alpha = 0.12f),
+            Color.Transparent
+        )
+    )
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(22.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .shadow(12.dp)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        c.surface.copy(alpha = 0.95f),
+                        c.surface.copy(alpha = 0.85f)
+                    )
+                ),
+                RoundedCornerShape(bottomStart = 26.dp, bottomEnd = 26.dp)
+            )
+            .border(
+                width = 1.dp,
+                brush = Brush.horizontalGradient(
+                    listOf(
+                        c.primary.copy(alpha = 0.35f),
+                        c.primary.copy(alpha = 0.12f)
+                    )
+                ),
+                shape = RoundedCornerShape(bottomStart = 26.dp, bottomEnd = 26.dp)
+            )
+            .drawBehind {
+                drawRect(glow, size = size)
+            }
+            .padding(horizontal = 22.dp, vertical = 30.dp)
     ) {
-        Icon(
-            imageVector = Icons.Default.SmartToy,
-            contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(38.dp)
-        )
-        Spacer(Modifier.width(12.dp))
 
-        Column {
-            Text(
-                "Asistente SLA",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-            Text(
-                "Analista inteligente del desempeño",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFFBFD9FF)
-            )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            // Círculo con color del tema
+            Box(
+                modifier = Modifier
+                    .size(54.dp)
+                    .background(c.primary, CircleShape)
+                    .border(3.dp, c.onPrimary.copy(alpha = 0.85f), CircleShape)
+                    .shadow(6.dp, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.SmartToy,
+                    contentDescription = null,
+                    tint = c.onPrimary,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+
+            Spacer(Modifier.width(16.dp))
+
+            Column {
+                Text(
+                    "Asistente SLA",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = c.onSurface
+                )
+                Text(
+                    "Analista inteligente del desempeño",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = c.onSurfaceVariant
+                )
+            }
         }
     }
 }
 
 //---------------------------------------------------------
-// Quick Questions Premium
+// Quick Questions
 //---------------------------------------------------------
 @Composable
 fun QuickQuestionsRowPremium(
     questions: List<QuickQuestion>,
     onClick: (String) -> Unit
 ) {
+    val c = MaterialTheme.colorScheme
+
     Row(
         modifier = Modifier
             .horizontalScroll(rememberScrollState())
@@ -172,15 +218,15 @@ fun QuickQuestionsRowPremium(
             Card(
                 shape = RoundedCornerShape(18.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White.copy(alpha = 0.12f)
+                    containerColor = c.surfaceVariant.copy(alpha = 0.25f)
                 ),
                 modifier = Modifier
                     .clickable { onClick(q.text) }
-                    .border(1.dp, Color(0xFF4A90E2), RoundedCornerShape(18.dp))
+                    .border(1.dp, c.primary, RoundedCornerShape(18.dp))
             ) {
                 Text(
                     q.text,
-                    color = Color.White,
+                    color = c.onSurface,
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -199,6 +245,8 @@ private fun InputBarPremium(
     onSend: () -> Unit
 ) {
 
+    val c = MaterialTheme.colorScheme
+
     val voiceLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
@@ -213,7 +261,7 @@ private fun InputBarPremium(
         modifier = Modifier
             .fillMaxWidth()
             .padding(12.dp)
-            .background(Color(0xFF0F203A), RoundedCornerShape(30.dp))
+            .background(c.surface, RoundedCornerShape(30.dp))
             .padding(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -222,18 +270,18 @@ private fun InputBarPremium(
             value = input,
             onValueChange = onInputChange,
             placeholder = {
-                Text("Escribe o habla…", color = Color(0xFFB0B8C6))
+                Text("Escribe o habla…", color = c.onSurfaceVariant)
             },
             modifier = Modifier
                 .weight(1f)
                 .shadow(4.dp, RoundedCornerShape(24.dp)),
             shape = RoundedCornerShape(24.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF4A90E2),
-                unfocusedBorderColor = Color(0x334A90E2),
-                cursorColor = Color.White,
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White
+                focusedBorderColor = c.primary,
+                unfocusedBorderColor = c.outline,
+                cursorColor = c.primary,
+                focusedTextColor = c.onSurface,
+                unfocusedTextColor = c.onSurface
             )
         )
 
@@ -251,7 +299,7 @@ private fun InputBarPremium(
             },
             modifier = Modifier
                 .size(46.dp)
-                .background(Color(0xFF1A73E8), CircleShape)
+                .background(c.primary, CircleShape)
         ) {
             Icon(Icons.Default.Mic, contentDescription = "Mic", tint = Color.White)
         }
@@ -262,8 +310,7 @@ private fun InputBarPremium(
             onClick = onSend,
             modifier = Modifier
                 .size(46.dp)
-                .background(Color(0xFF4A90E2), CircleShape)
-                .border(2.dp, Color(0xFF81B3FF), CircleShape)
+                .background(c.primary, CircleShape)
         ) {
             Icon(Icons.Default.Send, contentDescription = "Send", tint = Color.White)
         }
@@ -271,11 +318,10 @@ private fun InputBarPremium(
 }
 
 //---------------------------------------------------------
-// Message Bubble With Animation (Premium)
+// Message Animation
 //---------------------------------------------------------
 @Composable
 fun MessageBubbleAnimated(message: ChatMessage) {
-
     var visible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -292,28 +338,24 @@ fun MessageBubbleAnimated(message: ChatMessage) {
 }
 
 //---------------------------------------------------------
-// Bubble Design Premium
+// Bubble Design
 //---------------------------------------------------------
 @Composable
 private fun MessageBubblePremium(message: ChatMessage) {
 
-    val userBlue = Color(0xFF3D7BE8)
-    val assistantGray = Color(0xFFF6F8FF)
-    val errorRed = Color(0xFFB71C1C)
+    val bubbleColor =
+        when {
+            message.isError -> assistantErrorBubble()
+            message.isFromUser -> assistantUserBubble()
+            else -> assistantBotBubble()
+        }
 
-    val bubbleColor = when {
-        message.isError -> errorRed.copy(alpha = 0.12f)
-        message.isFromUser -> userBlue
-        else -> assistantGray
-    }
+    val textColor =
+        if (message.isFromUser) Color.White
+        else MaterialTheme.colorScheme.onSurface
 
-    val textColor = when {
-        message.isError -> errorRed
-        message.isFromUser -> Color.White
-        else -> Color(0xFF0A1A2F)
-    }
-
-    val alignment = if (message.isFromUser) Alignment.CenterEnd else Alignment.CenterStart
+    val alignment =
+        if (message.isFromUser) Alignment.CenterEnd else Alignment.CenterStart
 
     Box(
         modifier = Modifier
