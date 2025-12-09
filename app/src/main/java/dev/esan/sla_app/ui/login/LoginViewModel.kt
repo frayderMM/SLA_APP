@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 class LoginViewModel(
     private val repo: AuthRepository,
@@ -46,7 +47,14 @@ class LoginViewModel(
                 _state.value = LoginState(success = true)
 
             } catch (e: Exception) {
-                _state.value = LoginState(error = "Credenciales incorrectas o error de red")
+                when (e) {
+                    is IOException -> {
+                        _state.value = LoginState(error = "Error de red. Por favor, comprueba tu conexión a internet.")
+                    }
+                    else -> {
+                        _state.value = LoginState(error = "Credenciales incorrectas. Por favor, vuelve a intentarlo.")
+                    }
+                }
             }
         }
     }
